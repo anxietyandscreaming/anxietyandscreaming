@@ -1,0 +1,89 @@
+@using Clair.Common.RazorLib.Menus.Models;
+@using Clair.Common.RazorLib.FileSystems.Models
+@using Clair.Common.RazorLib.FileSystems.Displays
+@using Clair.Common.RazorLib.Widgets.Models
+
+<div id="@_htmlId" class="ci_menu-display" tabindex="0">
+    @{
+        if (_seenWidgetHeight != WidgetHeight)
+        {
+            _seenWidgetHeight = WidgetHeight;
+            _widgetHeightCssStyle = $"height: {_seenWidgetHeight}px";
+        }
+    
+        _horizontalRuleElementIndexHashSet.Clear();
+    
+        var previousKind = Menu.MenuOptionList.FirstOrDefault().MenuOptionKind;
+        
+        var appOptionsState = CommonService.GetAppOptionsState();
+    }
+    
+    @for (var i = 0; i < Menu.MenuOptionList.Count; i++)
+    {
+        var menuOption = Menu.MenuOptionList[i];
+        
+        var cssClass = _activeIndex == i
+            ? "ci_menu-option-display ci_unselectable ci_active"
+            : "ci_menu-option-display ci_unselectable";
+
+        if (previousKind != menuOption.MenuOptionKind)
+        {
+            previousKind = menuOption.MenuOptionKind;
+            <hr class="ci_hr"/>
+            _horizontalRuleElementIndexHashSet.Add(i);
+        }
+        
+        <div class="@cssClass" style="@CommonService.Options_LineHeight_CssStyle">
+            
+            @if (Menu.UseIcons)
+            {
+                <div class="ci_menu-option-icon">
+                    @switch (menuOption.IconKind)
+                    {
+                        case AutocompleteEntryKind.Word:
+                            @IconRenderer.Render(IconKind.SymbolKey, appOptionsState.Options.IconSizeInPixels, appOptionsState.Options.IconSizeInPixels)
+                            break;
+                        case AutocompleteEntryKind.Snippet:
+                            @IconRenderer.Render(IconKind.Note, appOptionsState.Options.IconSizeInPixels, appOptionsState.Options.IconSizeInPixels)
+                            break;
+                        case AutocompleteEntryKind.Variable:
+                            @IconRenderer.Render(IconKind.SymbolField, appOptionsState.Options.IconSizeInPixels, appOptionsState.Options.IconSizeInPixels)
+                            break;
+                        case AutocompleteEntryKind.Function:
+                            @IconRenderer.Render(IconKind.SymbolMethod, appOptionsState.Options.IconSizeInPixels, appOptionsState.Options.IconSizeInPixels)
+                            break;
+                        case AutocompleteEntryKind.Type:
+                            @IconRenderer.Render(IconKind.SymbolClass, appOptionsState.Options.IconSizeInPixels, appOptionsState.Options.IconSizeInPixels)
+                            break;
+                        case AutocompleteEntryKind.Namespace:
+                            @IconRenderer.Render(IconKind.SymbolNamespace, appOptionsState.Options.IconSizeInPixels, appOptionsState.Options.IconSizeInPixels)
+                            break;
+                    }
+                </div>
+            }
+            
+            @menuOption.DisplayName
+            
+            @if (menuOption.IconKind == AutocompleteEntryKind.Chevron)
+            {
+                @IconRenderer.Render(IconKind.ChevronRight, appOptionsState.Options.IconSizeInPixels, appOptionsState.Options.IconSizeInPixels)
+            }
+        </div>
+        
+        @*@if (i == _indexMenuOptionShouldDisplayWidget)
+        {
+            <CascadingValue Value="MenuOptionCallbacks">
+                <div class="ci_menu-option-widget"
+                     style="@_widgetHeightCssStyle"
+                     @onclick:stopPropagation="true"
+                     @ondblclick:stopPropagation="true"
+                     @onmousedown:stopPropagation="true"
+                     @onkeydown:stopPropagation="true"
+                     @oncontextmenu:stopPropagation="true">
+        
+                    
+                </div>
+            </CascadingValue>
+        }*@
+    }
+</div>

@@ -1,0 +1,34 @@
+<div class="ci_notification @(Notification.NotificationCssClass ?? string.Empty)"
+     style="@GetCssStyleString()">
+     
+    <div class="ci_notification-toolbar">
+        <div class="ci_notification-title ci_unselectable"
+             style="@GetNotificationTitleCssStyleString()"
+             title="@Notification.Title">
+            @Notification.Title
+        </div>
+
+        <div class="ci_notification-control-buttons">
+        
+        	@{
+        		var appOptionsState = CommonService.GetAppOptionsState();
+			}
+			
+            <button class="ci_button ci_notification-button-entry"
+            		@onclick="ChangeNotificationToDialog">
+                @IconRenderer.Render(IconKind.EmptyWindow, appOptionsState.Options.IconSizeInPixels, appOptionsState.Options.IconSizeInPixels)
+            </button>
+            <button class="ci_button ci_notification-button-entry"
+            		@onclick="Ui_HandleShouldNoLongerRender">
+                @IconRenderer.Render(IconKind.Close, appOptionsState.Options.IconSizeInPixels, appOptionsState.Options.IconSizeInPixels)
+            </button>
+        </div>
+    </div>
+
+    <div class="ci_notification-body">
+        <CascadingValue Value="Notification" IsFixed="true">
+            <DynamicComponent Type="Notification.ComponentType"
+                              Parameters="Notification.ComponentParameterMap"/>
+        </CascadingValue>
+    </div>
+</div>

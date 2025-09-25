@@ -1,0 +1,77 @@
+@using Clair.Common.RazorLib.Dynamics.Models
+@using Clair.Common.RazorLib.Resizes.Displays
+
+@{
+	var dialogState = CommonService.GetDialogState();
+	var dialogStateIsActiveSelection = dialogState.ActiveDialogKey == Dialog.DynamicViewModelKey;
+}
+
+<div class="ci_dialog-display @Dialog.DialogCssClass @GetCssClassForDialogStateIsActiveSelection(dialogStateIsActiveSelection)"
+     style="@Dialog.DialogElementDimensions.GetStyleString(CommonService.UiStringBuilder) @IsMaximizedStyleCssString"
+     id="@Dialog.DialogFocusPointHtmlElementId"
+     tabindex="-1"
+     @onfocusin="HandleOnFocusIn"
+     @onmousedown="HandleOnMouseDown">
+
+    @if (Dialog.DialogIsResizable && !Dialog.DialogIsMaximized)
+    {
+        <ResizableDisplay @ref="_resizableDisplay"
+                          ElementDimensions="Dialog.DialogElementDimensions"
+                          ReRenderFuncAsync="ReRenderAsync"
+                          Drag="Dialog as IDrag" />
+    }
+
+    <div class="ci_dialog-display-toolbar"
+         @onmousedown="SubscribeMoveHandleAsync">
+        <div class="ci_dialog-display-title ci_unselectable"
+             style="@DialogTitleCssStyleString"
+             title="@Dialog.Title">
+            @Dialog.Title
+        </div>
+
+        <div class="ci_dialog-display-buttons"
+             @onmousedown:stopPropagation="true">
+             
+            @{
+            	var appOptionsState = CommonService.GetAppOptionsState();
+            }
+            
+            @if (Dialog.DialogIsResizable)
+            {
+                <button class="ci_button ci_dialog-display-button-entry"
+                        @onclick="ToggleIsMaximized">
+
+                    @if (Dialog.DialogIsMaximized)
+                    {
+                        @IconRenderer.Render(
+                            IconKind.Restore,
+                            appOptionsState.Options.IconSizeInPixels,
+                            appOptionsState.Options.IconSizeInPixels)
+                    }
+                    else
+                    {
+                        @IconRenderer.Render(
+                            IconKind.Maximize,
+                            appOptionsState.Options.IconSizeInPixels,
+                            appOptionsState.Options.IconSizeInPixels)
+                    }
+                </button>
+            }
+            
+            <button class="ci_button ci_dialog-display-button-entry"
+                    @onclick="DispatchDisposeDialogRecordAction">
+                @IconRenderer.Render(
+                    IconKind.Close,
+                    appOptionsState.Options.IconSizeInPixels,
+                    appOptionsState.Options.IconSizeInPixels)
+            </button>
+        </div>
+    </div>
+
+    <div class="ci_dialog-display-body">
+        <CascadingValue Value="Dialog" IsFixed="true">
+            <DynamicComponent Type="Dialog.ComponentType"
+                              Parameters="Dialog.ComponentParameterMap" />
+        </CascadingValue>
+    </div>
+</div>

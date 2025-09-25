@@ -1,0 +1,133 @@
+@using Clair.Common.RazorLib.Keys.Models;
+@using Clair.Common.RazorLib.TreeViews.Models;
+@using Clair.Common.RazorLib.Dimensions;
+@using Clair.Common.RazorLib.Dimensions.Models;
+
+@*@{ _treeViewContainer = null; }*@
+@{
+    _treeViewContainer = CommonService.GetTreeViewContainer(TreeViewContainerParameter.TreeViewContainerKey);
+}
+
+<div id="@_htmlId"
+     class="@GetContainerElementCssClass(_treeViewContainer)"
+     tabindex="0">
+
+    @if (_treeViewContainer is null)
+    {
+        <div>@nameof(_treeViewContainer) was null</div>
+    }
+    else
+    {
+        if (_previousTreeViewContainerKey != TreeViewContainerParameter.TreeViewContainerKey ||
+            _previousContainerVersion != _treeViewContainer.FlatListVersion)
+        {
+            _previousTreeViewContainerKey = TreeViewContainerParameter.TreeViewContainerKey;
+            _previousContainerVersion = _treeViewContainer.FlatListVersion;
+            GetFlatNodes();
+            _shouldValidateScrollbarOnAfterRender = true;
+        }
+    
+        _treeViewContainer.ElementIdOfComponentRenderingThis = _htmlId;
+    	var appOptionsState = CommonService.GetAppOptionsState();
+    
+        var list = _flatNodeList;
+        IndexActiveNode = 0;
+        string? cssClass;
+
+        var startingIndex = (int)(_treeViewMeasurements.ScrollTop / CommonService.Options_LineHeight);
+        if (startingIndex > 1)
+            startingIndex -= 2;
+        else if (startingIndex > 0)
+            startingIndex -= 1;
+        
+        if (startingIndex < 0)
+        {
+            startingIndex = 0;
+        }
+            
+        var upperLimitIndex = (int)Math.Ceiling(_treeViewMeasurements.ViewHeight / CommonService.Options_LineHeight) + startingIndex;
+        upperLimitIndex += 2;
+        if (upperLimitIndex > list.Count)
+        {
+            upperLimitIndex = list.Count;
+        }
+        
+        if (upperLimitIndex < 0)
+        {
+            upperLimitIndex = 0;
+        }
+
+        <div style="height: @(CommonService.Options_LineHeight * list.Count)px; width: 1px; position: absolute;"></div>
+
+        for (int i = startingIndex; i < upperLimitIndex; i++)
+        {
+            var node = list[i];
+        
+            if ((_treeViewContainer.ActiveNode?.Key ?? Key<TreeViewNoType>.Empty) == node.Key)
+            {
+                cssClass = "ci_active ci_selected";
+                IndexActiveNode = i;
+            }
+            else
+            {
+                cssClass = null;
+            }
+        
+            <div class="@cssClass"
+                 style="@GetNodeElementCssStyle(node, i)">
+
+                @if (node.IsExpandable)
+                {
+                    <span style="cursor: pointer;">
+                        @if (node.IsExpanded)
+                        {
+                            @IconRenderer.Render(IconKind.ChevronDown, appOptionsState.Options.IconSizeInPixels, appOptionsState.Options.IconSizeInPixels)
+                        }
+                        else
+                        {
+                            @IconRenderer.Render(IconKind.ChevronRight, appOptionsState.Options.IconSizeInPixels, appOptionsState.Options.IconSizeInPixels)
+                        }
+                    </span>
+                }
+                else
+                {
+                    <span>
+                        @IconRenderer.Render(IconKind.Blank, appOptionsState.Options.IconSizeInPixels, appOptionsState.Options.IconSizeInPixels)
+                    </span>
+                }
+
+                @IconRenderer.Render(node.IconKind, appOptionsState.Options.IconSizeInPixels, appOptionsState.Options.IconSizeInPixels)
+
+                <div class="@node.GetDisplayTextCssClass()" title="@node.GetHoverText()">
+                    @node.GetDisplayText()
+                </div>
+            </div>
+        }
+    }
+    
+    @*<div class="ci_te_scrollbar-section">
+		
+		<div class="ci_te_scrollbar ci_te_scrollbar-horizontal"
+		     id="@HORIZONTAL_ScrollbarElementId"
+		     style="@virtualizationResult.HORIZONTAL_ScrollbarCssStyle">
+		    
+		    <div class="ci_te_scrollbar-slider"
+		         id="@HORIZONTAL_ScrollbarSliderElementId"
+		         style="@virtualizationResult.HORIZONTAL_SliderCssStyle">
+		    </div>
+		</div><!--
+		
+		--><div class="ci_te_scrollbar ci_te_scrollbar-vertical"
+		        id="@VERTICAL_ScrollbarElementId">
+		         
+		    <div class="ci_te_scrollbar-slider"
+		         id="@VERTICAL_ScrollbarSliderElementId"
+		         style="@virtualizationResult.VERTICAL_SliderCssStyle">
+		    </div>
+		</div><!--
+	    
+		--><div class="ci_te_scrollbar ci_te_scrollbar-connector"
+		        id="@CONNECTOR_ScrollbarElementId">
+		</div>
+	</div>*@
+</div>

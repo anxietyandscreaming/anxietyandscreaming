@@ -1,0 +1,90 @@
+using System.Text;
+using Clair.Common.RazorLib;
+using Clair.Common.RazorLib.TreeViews.Models;
+using Clair.Common.RazorLib.FileSystems.Models;
+using Clair.CompilerServices.DotNetSolution.Models.Project;
+using Clair.Extensions.DotNet.CSharpProjects.Models;
+using Clair.Ide.RazorLib;
+
+namespace Clair.Extensions.DotNet.Namespaces.Models;
+
+public class TreeViewHelperCSharpProject
+{
+    public static async Task<List<TreeViewNoType>> LoadChildrenAsync(TreeViewNamespacePath cSharpProjectTreeView)
+    {
+        var parentDirectoryOfCSharpProject = cSharpProjectTreeView.Item.CreateSubstringParentDirectory();
+        if (parentDirectoryOfCSharpProject is null)
+            return cSharpProjectTreeView.ChildList;
+        
+        var ancestorDirectory = parentDirectoryOfCSharpProject;
+        var hiddenFiles = IdeFacts.GetHiddenFilesByContainerFileExtension(CommonFacts.C_SHARP_PROJECT);
+
+        var directoryPathStringsList = await cSharpProjectTreeView.CommonService.FileSystemProvider.Directory
+            .GetDirectoriesAsync(ancestorDirectory)
+            .ConfigureAwait(false);
+
+        var tokenBuilder = new StringBuilder();
+        var formattedBuilder = new StringBuilder();
+
+        var childDirectoryTreeViewModelsList = directoryPathStringsList
+            .OrderBy(pathString => pathString)
+            .Where(x => hiddenFiles.All(hidden => !x.EndsWith(hidden)))
+            .Select(x =>
+            {
+                var absolutePath = new AbsolutePath(x, true, cSharpProjectTreeView.CommonService.FileSystemProvider, tokenBuilder, formattedBuilder, AbsolutePathNameKind.NameNoExtension);
+
+                return new TreeViewNamespacePath(
+                    absolutePath,
+                    cSharpProjectTreeView.CommonService,
+                    true,
+                    false);
+            });
+
+        var uniqueDirectories = IdeFacts.GetUniqueFilesByContainerFileExtension(CommonFacts.C_SHARP_PROJECT);
+        var foundUniqueDirectories = new List<TreeViewNamespacePath>();
+        var foundDefaultDirectories = new List<TreeViewNamespacePath>();
+
+        foreach (var directoryTreeViewModel in childDirectoryTreeViewModelsList)
+        {
+            if (uniqueDirectories.Any(unique => directoryTreeViewModel.Item.Name == unique))
+                foundUniqueDirectories.Add(directoryTreeViewModel);
+            else
+                foundDefaultDirectories.Add(directoryTreeViewModel);
+        }
+
+        foundUniqueDirectories = foundUniqueDirectories.OrderBy(x => x.Item.Name).ToList();
+        foundDefaultDirectories = foundDefaultDirectories.OrderBy(x => x.Item.Name).ToList();
+
+        var filePathStringsList = await cSharpProjectTreeView.CommonService.FileSystemProvider.Directory
+            .GetFilesAsync(ancestorDirectory)
+            .ConfigureAwait(false);
+
+        var childFileTreeViewModels = filePathStringsList
+            .OrderBy(pathString => pathString)
+            .Where(x => !x.EndsWith(CommonFacts.C_SHARP_PROJECT))
+            .Select(x =>
+            {
+                var absolutePath = new AbsolutePath(x, false, cSharpProjectTreeView.CommonService.FileSystemProvider, tokenBuilder, formattedBuilder, AbsolutePathNameKind.NameWithExtension);
+
+                return (TreeViewNoType)new TreeViewNamespacePath(
+                    absolutePath,
+                    cSharpProjectTreeView.CommonService,
+                    false,
+                    false);
+            });
+
+        var cSharpProjectDependenciesTreeViewNode = new TreeViewCSharpProjectDependencies(
+            new CSharpProjectDependencies(cSharpProjectTreeView.Item),
+            cSharpProjectTreeView.CommonService,
+            true,
+            false);
+        
+        var result = new List<TreeViewNoType>();
+        result.Add(cSharpProjectDependenciesTreeViewNode);
+        result.AddRange(foundUniqueDirectories);
+        result.AddRange(foundDefaultDirectories);
+        result.AddRange(childFileTreeViewModels);
+        
+        return result;
+    }
+}
