@@ -30,6 +30,7 @@ public ref partial struct CSharpParserState
 
     public CSharpParserState(
         CSharpBinder binder,
+        TokenWalkerBuffer tokenWalkerBuffer,
         int absolutePathId,
         ref CSharpCompilationUnit compilationUnit,
         ref CSharpLexerOutput lexerOutput)
@@ -40,8 +41,7 @@ public ref partial struct CSharpParserState
         CurrentNamespaceStatementValue = new NamespaceStatementValue(binder.TopLevelNamespaceStatementNode);
         AbsolutePathId = absolutePathId;
 
-        TokenWalker = Binder.CSharpParserModel_TokenWalker;
-        TokenWalker.Reinitialize(lexerOutput.SyntaxTokenList);
+        TokenWalker = tokenWalkerBuffer;
         
         ForceParseExpressionInitialPrimaryExpression = EmptyExpressionNode.Empty;
         
@@ -92,7 +92,7 @@ public ref partial struct CSharpParserState
         Compilation.NodeOffset = Binder.NodeList.Count;
     }
     
-    public TokenWalker TokenWalker { get; }
+    public TokenWalkerBuffer TokenWalker{ get; }
     public CSharpStatementBuilder StatementBuilder { get; set; }
     
     public int AbsolutePathId { get; }

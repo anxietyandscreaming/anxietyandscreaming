@@ -10,7 +10,7 @@ namespace Clair.CompilerServices.CSharp.ParserCase;
 
 public static class CSharpParser
 {
-    public static void Parse(int absolutePathId, ref CSharpCompilationUnit compilationUnit, CSharpBinder binder, ref CSharpLexerOutput lexerOutput)
+    public static void Parse(int absolutePathId, TokenWalkerBuffer tokenWalkerBuffer, ref CSharpCompilationUnit compilationUnit, CSharpBinder binder, ref CSharpLexerOutput lexerOutput)
     {
         /*
         Any state that is "pooled" and cleared at the start of every Parse(...) invocation
@@ -41,9 +41,16 @@ public static class CSharpParser
         
         var parserModel = new CSharpParserState(
             binder,
+            tokenWalkerBuffer,
             absolutePathId,
             ref compilationUnit,
             ref lexerOutput);
+        
+        // lexerOutput = CSharpLexer.Lex(binder, resourceUri, TextEditorService.LEXER_miscTextSpanList, _streamReaderWrap, shouldUseSharedStringWalker: true);
+        
+        /*while (true)
+        {
+        }*/
         
         while (true)
         {

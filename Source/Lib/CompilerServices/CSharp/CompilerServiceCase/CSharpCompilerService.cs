@@ -31,6 +31,8 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
     // <summary>Public because the RazorCompilerService uses it.</summary>
     public readonly CSharpBinder __CSharpBinder;
     private readonly StreamReaderPooledBufferWrap _streamReaderWrap = new();
+    // Where do I want the state...
+    private readonly TokenWalkerBuffer _tokenWalkerBuffer = new();
     
     // Service dependencies
     private readonly TextEditorService _textEditorService;
@@ -1995,37 +1997,44 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
         var presentationModel = modelModifier.PresentationModelList.First(
             x => x.TextEditorPresentationKey == TextEditorFacts.CompilerServiceDiagnosticPresentation_PresentationKey);
         
+        // V_NOTE: Resulting state is made up front in order to get a reference that can be shared around while populating the result state.
         var cSharpCompilationUnit = new CSharpCompilationUnit(CompilationUnitKind.IndividualFile_AllData);
 
         _currentFileBeingParsedTuple = (absolutePathId, presentationModel.PendingCalculation.ContentAtRequest);
+        // TODO: Move this to after the parse so you don't have the string references "dangling" for no reason between parses.
         _textEditorService.EditContext_GetText_Clear();
 
-        CSharpLexerOutput lexerOutput;
-
-        // Convert the string to a byte array using a specific encoding
-        byte[] byteArray = Encoding.UTF8.GetBytes(presentationModel.PendingCalculation.ContentAtRequest);
-
-        var byteBuffer = Rent_ByteBuffer();
-        var charBuffer = Rent_CharBuffer();
-        // Create a MemoryStream from the byte array
-        using (MemoryStream memoryStream = new MemoryStream(byteArray))
-        {
-            // Create a StreamReader from the MemoryStream
-            using (StreamReaderPooledBuffer reader = new StreamReaderPooledBuffer(memoryStream, Encoding.UTF8, byteBuffer, charBuffer))
-            {
-                _streamReaderWrap.ReInitialize(reader);
-                lexerOutput = CSharpLexer.Lex(__CSharpBinder, resourceUri, _streamReaderWrap, shouldUseSharedStringWalker: true);
-            }
-        }
-        Return_ByteBuffer(byteBuffer);
-        Return_CharBuffer(charBuffer);
-
-        // Even if the parser throws an exception, be sure to
-        // make use of the Lexer to do whatever syntax highlighting is possible.
         try
         {
-            __CSharpBinder.StartCompilationUnit(absolutePathId);
-            CSharpParser.Parse(absolutePathId, ref cSharpCompilationUnit, __CSharpBinder, ref lexerOutput);
+            CSharpLexerOutput lexerOutput;
+
+            // Convert the string to a byte array using a specific encoding
+            byte[] byteArray = Encoding.UTF8.GetBytes(presentationModel.PendingCalculation.ContentAtRequest);
+    
+            var byteBuffer = Rent_ByteBuffer();
+            var charBuffer = Rent_CharBuffer();
+            // Create a MemoryStream from the byte array
+            using (MemoryStream memoryStream = new MemoryStream(byteArray))
+            {
+                // Create a StreamReader from the MemoryStream
+                using (StreamReaderPooledBuffer reader = new StreamReaderPooledBuffer(memoryStream, Encoding.UTF8, byteBuffer, charBuffer))
+                {
+                    _streamReaderWrap.ReInitialize(reader);
+                    
+                    TextEditorService.LEXER_miscTextSpanList.Clear();
+                    _tokenWalkerBuffer.ReInitialize(
+                        __CSharpBinder,
+                        resourceUri,
+                        TextEditorService.LEXER_miscTextSpanList,
+                        _streamReaderWrap,
+                        shouldUseSharedStringWalker: true);
+                    
+                    __CSharpBinder.StartCompilationUnit(absolutePathId);
+                    CSharpParser.Parse(absolutePathId, _tokenWalkerBuffer, ref cSharpCompilationUnit, __CSharpBinder, ref lexerOutput);
+                }
+            }
+            Return_ByteBuffer(byteBuffer);
+            Return_CharBuffer(charBuffer);
         }
         finally
         {
@@ -2086,7 +2095,8 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
         {
             _streamReaderWrap.ReInitialize(sr);
             
-            lexerOutput = CSharpLexer.Lex(__CSharpBinder, resourceUri, _streamReaderWrap, shouldUseSharedStringWalker: true);
+            TextEditorService.LEXER_miscTextSpanList.Clear();
+            lexerOutput = CSharpLexer.Lex(__CSharpBinder, resourceUri, TextEditorService.LEXER_miscTextSpanList, _streamReaderWrap, shouldUseSharedStringWalker: true);
 
             FastParseTuple = (absolutePathId, sr);
             __CSharpBinder.StartCompilationUnit(absolutePathId);

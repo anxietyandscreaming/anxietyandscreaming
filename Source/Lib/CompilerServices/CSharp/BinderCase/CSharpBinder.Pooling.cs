@@ -19,8 +19,6 @@ public partial class CSharpBinder
     public List<SyntaxNodeValue> CSharpParserModel_ExternalTypeDefinitionList { get; } = new();
     public CSharpStatementBuilder CSharpParserModel_StatementBuilder { get; } = new();
 
-    public TokenWalker CSharpParserModel_TokenWalker { get; } = new(Array.Empty<SyntaxToken>(), useDeferredParsing: true);
-
     /// <summary>
     /// This is cleared at the start of a new parse, inside the CSharpParserModel constructor.
     /// </summary>
@@ -32,10 +30,6 @@ public partial class CSharpBinder
     /// </summary>
     public List<VariableDeclarationNode> LambdaExpressionNodeChildList { get; } = new();
 
-    /// <summary>
-    /// This list is used within TextEditorEditContext and for the lexers to re-use by clearing it prior to starting the lexing.
-    /// </summary>
-    internal readonly List<SyntaxToken> LEXER_syntaxTokenList = new();
     /// <summary>
     /// Used by lexer
     /// </summary>
