@@ -56,11 +56,11 @@ public class TokenWalkerBuffer
     /// I'm pretty sure the PositionIndex is '_positionIndex - PeekSize;'
     /// But I'm adding it here cause I'm tired and don't want to end up in a possible rabbit hole over this right now.
     /// </summary>
-    private (SyntaxToken SyntaxToken, int PositionIndex, int ByteIndex)[] _peekBuffer = new (SyntaxToken SyntaxToken, int PositionIndex, int ByteIndex)[3]; // largest Peek is 2
+    private (SyntaxToken SyntaxToken, int PositionIndex)[] _peekBuffer = new (SyntaxToken SyntaxToken, int PositionIndex)[3]; // largest Peek is 2
     private int _peekIndex = -1;
     private int _peekSize = 0;
 
-    private (SyntaxToken SyntaxToken, int PositionIndex, int ByteIndex) _backtrackTuple;
+    private (SyntaxToken SyntaxToken, int PositionIndex) _backtrackTuple;
 
     private int _index;
     public int Index
@@ -185,19 +185,159 @@ public class TokenWalkerBuffer
 
     public SyntaxToken Consume()
     {
-        ++ConsumeCounter;
-        return CSharpLexer.Lex_Frame(
-            _binder,
-            MiscTextSpanList,
-            StreamReaderWrap,
-            ref _previousEscapeCharacterTextSpan,
-            ref _interpolatedExpressionUnmatchedBraceCount);
+        if (_peekIndex != -1)
+        {
+            _backtrackTuple = _peekBuffer[_peekIndex++];
+
+            if (_peekIndex >= _peekSize)
+            {
+                _peekIndex = -1;
+                _peekSize = 0;
+            }
+        }
+        else
+        {
+            if (StreamReaderWrap.IsEof)
+            {
+                var endOfFileTextSpan = new TextEditorTextSpan(
+                    StreamReaderWrap.PositionIndex,
+                    StreamReaderWrap.PositionIndex,
+                    (byte)GenericDecorationKind.None,
+                    StreamReaderWrap.ByteIndex);
+                _syntaxTokenBuffer[0] = new SyntaxToken(SyntaxKind.EndOfFileToken, endOfFileTextSpan);
+                return Current;
+            }
+            // This is duplicated more than once inside the Peek(int) code.
+
+            _backtrackTuple = (_syntaxTokenBuffer[0], Index);
+
+            _index++;
+            
+            ++ConsumeCounter;
+            _syntaxTokenBuffer[0] = CSharpLexer.Lex_Frame(
+                _binder,
+                MiscTextSpanList,
+                StreamReaderWrap,
+                ref _previousEscapeCharacterTextSpan,
+                ref _interpolatedExpressionUnmatchedBraceCount);
+        }
+        
+        return Current;
+    }
+    
+    private SyntaxToken Consume_NoCounter()
+    {
+        --ConsumeCounter;
+        return Consume();
     }
 
     public SyntaxToken Peek(int offset)
     {
-        throw new NotImplementedException();
-        return default;
+        // Peek(1)
+        // -------
+        //
+        // 
+        // The '=' represents the StreamReader
+        // The '+' represents the "peek buffer position".
+        //
+        //
+        // Before state
+        // ------------
+        // Abcd
+        //  =
+        //
+        //
+        // After state
+        // -----------
+        // Abcd
+        //  +=
+        //
+        // 
+        // The _peekCount = 1
+        // The _peekIndex is _peekCount - 1
+        //
+        // 
+
+
+        if (offset <= -1)
+            throw new ClairTextEditorException($"{nameof(offset)} must be > -1");
+        if (offset == 0)
+            return _syntaxTokenBuffer[0];
+
+        if (_peekIndex != -1)
+        {
+            // This means a Peek() was performed,
+            // then before the PeekBuffer was fully traversed
+            // another peek occurred.
+            //
+            // I'm hoping that this case just doesn't occur in the Lexer at the moment
+            // because I'm quite tired.
+
+            // Followup: this did happen
+            // so I'm splitting by cases
+            //
+            // - Second Peek(int) is within PeekSize
+            // - Second Peek(int) is currentCharacter
+            // - ...
+
+            if (_peekIndex + offset < _peekSize)
+            {
+                throw new NotImplementedException();
+            }
+            // This 'else if' is probably wrong.
+            else if (_peekIndex + offset == _peekSize)
+            {
+                throw new NotImplementedException();
+                //return _streamReaderCharBuffer[0];
+            }
+            else
+            {
+                throw new NotImplementedException();
+                
+                /*if (_peekIndex == 0)
+                {
+                    // Note: this says '<' NOT '<=' (which is probably what people would expect)...
+                    // ...I'm tired and worried so I'm just moving extremely one by one.
+                    // I know the less than works, maybe the less than equal to works.
+                    // I mean it probably should work but I have a somewhat empty fuel tank right now.
+                    if (_peekSize < _peekBuffer.Length)
+                    {
+                        if (_peekSize == 1 && offset == 2)
+                        {
+                            _peekBuffer[_peekSize] = (_streamReaderCharBuffer[0], PositionIndex, ByteIndex);
+                            _peekSize++;
+
+                            // This is duplicated inside the ReadCharacter() code.
+
+                            _streamPositionIndex++;
+                            _streamByteIndex += StreamReader.CurrentEncoding.GetByteCount(_streamReaderCharBuffer);
+                            StreamReader.Read(_streamReaderCharBuffer);
+                            return _streamReaderCharBuffer[0];
+                        }
+                    }
+                }
+
+                throw new NotImplementedException();*/
+            }
+        }
+
+        for (int i = 0; i < offset; i++)
+        {
+            // TODO: Peek() before any Read()
+
+            _peekBuffer[i] = (_syntaxTokenBuffer[0], Index);
+            _peekIndex++;
+            _peekSize++;
+
+            // This is duplicated inside the ReadCharacter() code.
+
+            _index++;
+            _syntaxTokenBuffer[0] = Consume_NoCounter();
+        }
+
+        // TODO: Peek EOF
+        // TODO: Peek overlap EOF
+        return _syntaxTokenBuffer[0];
     }
 
     /// <summary>
