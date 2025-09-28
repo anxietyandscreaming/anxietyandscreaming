@@ -9,47 +9,20 @@ using Clair.CompilerServices.CSharp.BinderCase;
 
 namespace Clair.CompilerServices.CSharp.CompilerServiceCase;
 
-// Worries:
-// - String interpolation
-// - Deferred parsing
-
-// Order of interactions:
-// - Is the parser asking the TokenWalkerPooledBufferWrap
-// - or is the parser asking the Lexer.
-//
-// The parser could ask the Lexer if things were written such that the Lexer could statefully handle the buffer
-// But with the current static Lexer, it seems more sensible to ask the TokenWalkerPooledBufferWrap
-//
-// All the states could more or less get merged.
-// Having the states separate is not the "end of the world".
-// It would just mean the passing of more arguments between each static method invocation
-// ...but it can certainly add up in extreme cases.
-// 
-
-
-/*
-Parser
-    TokenWalkerWrap
-        Lexer
-            StreamReaderWrap
-
-Parser... CurrentToken
-    TokenWalkerWrap...
-    
-    the return is at the Lexer switch statement.
-
-*/
-
-// It isn't a wrap of the existing TokenWalker, it is a new TokenWalker, "from scratch" that maintains a buffer.
+/// <summary>
+/// ReInitialize must be invoked at the start of every "new usage" of the pooled instance.
+/// This invocation having occurred is NOT asserted, so neglecting to invoke it is undefined behavior.
+/// </summary>
 public class TokenWalkerBuffer
 {
-    public TokenWalkerBuffer()
-    {
-    }
-    
     public List<TextEditorTextSpan> MiscTextSpanList { get; private set; }
+    
+    private TextEditorTextSpan _previousEscapeCharacterTextSpan;
 
-    // It needs an in
+    /// <summary>
+    /// ReInitialize must be invoked at the start of every "new usage" of the pooled instance.
+    /// This invocation having occurred is NOT asserted, so neglecting to invoke it is undefined behavior.
+    /// </summary>
     public void ReInitialize(
         CSharpBinder binder,
         ResourceUri resourceUri,
@@ -58,9 +31,14 @@ public class TokenWalkerBuffer
         StreamReaderPooledBufferWrap streamReaderWrap,
         bool shouldUseSharedStringWalker)
     {
+        _index = 0;
+        ConsumeCounter = 0;
+        _deferredParsingTuple = (-1, -1, -1);
+        _deferredParsingTupleStack.Clear();
+    
         MiscTextSpanList = miscTextSpanList;
         
-        var previousEscapeCharacterTextSpan = new TextEditorTextSpan(
+        _previousEscapeCharacterTextSpan = new TextEditorTextSpan(
             0,
             0,
             (byte)GenericDecorationKind.None);
@@ -68,26 +46,6 @@ public class TokenWalkerBuffer
         var interpolatedExpressionUnmatchedBraceCount = -1;
         
         StreamReaderWrap = streamReaderWrap;
-        
-        // Loop patterns when parsing / etc...
-        //
-        // - IEnumerable is (I think) the most common one.
-        // - I have been using a 'foreach variable' perspective... i.e.: the initial entry is available without me having to invoke any methods.
-        //
-        // Changing to IEnumerable is not of the highest concern at the moment, because I still have a lot to learn and I don't want to spend time
-        // on something like that at the moment.
-        
-        // Each 'Lex_Frame' would presumably Lex the next SyntaxToken.
-        //
-        // How this will interact with string interpolation I'm not quite sure yet.
-        // - I could lex the entirety of any string interpolation scenarios, probably in the worst case scenario.
-        //   ... these lists wouldn't be guaranteed to a smaller capacity than the current LOH scenario, but it certainly would be expected
-        //   ... that a capacity decrease overall would occur.
-        // 
-        // 'Lex_Frame' invocations will therefore move me forward in the StreamReader as well.
-        // If the StreamReader is at the 'End of File' then I can probably return an 'End of File' token with respect to the TokenWalkerBuffer.
-        
-        // CSharpLexer.Lex_Frame(binder, miscTextSpanList, streamReaderWrap, ref previousEscapeCharacterTextSpan, ref interpolatedExpressionUnmatchedBraceCount);
         
         // You probably don't have to set these to default because they just get overwritten when the time comes.
         // But I'm unsure, and there is far more valuable changes to be made so I'm just gonna set them to default.
@@ -112,28 +70,22 @@ public class TokenWalkerBuffer
     /// I'm pretty sure the PositionIndex is '_positionIndex - PeekSize;'
     /// But I'm adding it here cause I'm tired and don't want to end up in a possible rabbit hole over this right now.
     /// </summary>
-    private (SyntaxToken Character, int PositionIndex, int ByteIndex)[] _peekBuffer = new (SyntaxToken Character, int PositionIndex, int ByteIndex)[3]; // largest Peek is 2
+    private (SyntaxToken SyntaxToken, int PositionIndex, int ByteIndex)[] _peekBuffer = new (SyntaxToken SyntaxToken, int PositionIndex, int ByteIndex)[3]; // largest Peek is 2
     private int _peekIndex = -1;
     private int _peekSize = 0;
 
-    private (SyntaxToken Character, int PositionIndex, int ByteIndex) _backtrackTuple;
+    private (SyntaxToken SyntaxToken, int PositionIndex, int ByteIndex) _backtrackTuple;
 
-    public TokenWalker TokenWalker { get; private set; }
-
-    /// <summary>
-    /// The count is unreliable (only accurate when the most recent ReadCharacter() came from the StreamReader.
-    /// The main purpose is to check if it is non-zero to indicate you are NOT at the end of the file.
-    /// </summary>
-    public int LastReadCharacterCount { get; set; } = 1;
-
-    private int _streamPositionIndex;
-    public int PositionIndex
+    private int _index;
+    public int Index
     {
         get
         {
+            throw new NotImplementedException();
+            
             if (_peekIndex == -1)
             {
-                return _streamPositionIndex;
+                return _index;
             }
             else
             {
@@ -142,27 +94,7 @@ public class TokenWalkerBuffer
         }
         set
         {
-            _streamPositionIndex = value;
-        }
-    }
-
-    private int _streamByteIndex;
-    public int ByteIndex
-    {
-        get
-        {
-            if (_peekIndex == -1)
-            {
-                return _streamByteIndex;
-            }
-            else
-            {
-                return _peekBuffer[_peekIndex].ByteIndex;
-            }
-        }
-        set
-        {
-            _streamByteIndex = value;
+            _index = value;
         }
     }
 
@@ -194,7 +126,7 @@ public class TokenWalkerBuffer
             }
             else
             {
-                return _peekBuffer[_peekIndex].Character;
+                return _peekBuffer[_peekIndex].SyntaxToken;
             }
         }
     }
@@ -211,7 +143,7 @@ public class TokenWalkerBuffer
             {
                 if (_peekIndex + 1 < _peekSize)
                 {
-                    return _peekBuffer[_peekIndex + 1].Character;
+                    return _peekBuffer[_peekIndex + 1].SyntaxToken;
                 }
                 else
                 {
@@ -223,20 +155,23 @@ public class TokenWalkerBuffer
 
     public SyntaxToken Consume()
     {
-        
+        throw new NotImplementedException();
         return default;
     }
 
     public SyntaxToken Peek(int offset)
     {
+        throw new NotImplementedException();
         return default;
     }
 
     /// <summary>
     /// Backtrack is somewhat a sub-case of Peek(int)
     /// </summary>
-    public void BacktrackSyntaxTokenNoReturnValue()
+    public void BacktrackNoReturnValue()
     {
+        throw new NotImplementedException();
+        
         if (_peekIndex != -1)
         {
             // This means a Peek() was performed,
@@ -248,7 +183,7 @@ public class TokenWalkerBuffer
             throw new NotImplementedException();
         }
 
-        if (PositionIndex == 0)
+        if (Index == 0)
             return;
 
         // This code is a repeat of the Peek() method's for loop but for one iteration
@@ -263,9 +198,33 @@ public class TokenWalkerBuffer
         _streamPositionIndex++;
         _streamByteIndex += StreamReader.CurrentEncoding.GetByteCount(_streamReaderCharBuffer);
         */
-    }
+        
+        /*
+        public SyntaxToken Backtrack()
+        {
+            throw new NotImplementedException();
+            
+            if (_index > 0)
+            {
+                _index--;
+                ConsumeCounter--;
+            }
     
-    private int _index;
+            return Peek(_index);
+        }
+    
+        public void BacktrackNoReturnValue()
+        {
+            throw new NotImplementedException();
+            
+            if (_index > 0)
+            {
+                _index--;
+                ConsumeCounter--;
+            }
+        }
+        */
+    }
 
     /// <summary>
     /// Use '-1' for each int value to indicate 'null' for the entirety of the _deferredParsingTuple;
@@ -283,36 +242,17 @@ public class TokenWalkerBuffer
     public int ConsumeCounter { get; private set; }
 
     public IReadOnlyList<SyntaxToken> TokenList { get; private set; }
-    public int Index => _index;
 
     /// <summary>If there are any tokens, then assume the final token is the end of file token. Otherwise, fabricate an end of file token.</summary>
     private SyntaxToken EOF => TokenList.Count > 0
         ? TokenList[TokenList.Count - 1]
         : new SyntaxToken(SyntaxKind.EndOfFileToken, new(0, 0, 0));
 
-    public SyntaxToken Backtrack()
-    {
-        if (_index > 0)
-        {
-            _index--;
-            ConsumeCounter--;
-        }
-
-        return Peek(_index);
-    }
-
-    public void BacktrackNoReturnValue()
-    {
-        if (_index > 0)
-        {
-            _index--;
-            ConsumeCounter--;
-        }
-    }
-
     /// <summary>If the syntaxKind passed in does not match the current token, then a syntax token with that syntax kind will be fabricated and then returned instead.</summary>
     public SyntaxToken Match(SyntaxKind expectedSyntaxKind)
     {
+        throw new NotImplementedException();
+        
         if (Current.SyntaxKind == expectedSyntaxKind)
             return Consume();
         else
@@ -328,6 +268,7 @@ public class TokenWalkerBuffer
         int closeTokenIndex,
         int tokenIndexToRestore)
     {
+        throw new NotImplementedException();
         _index = openTokenIndex;
         _deferredParsingTuple = (openTokenIndex, closeTokenIndex, tokenIndexToRestore);
         _deferredParsingTupleStack.Push((openTokenIndex, closeTokenIndex, tokenIndexToRestore));
@@ -336,30 +277,19 @@ public class TokenWalkerBuffer
 
     public void SetNullDeferredParsingTuple()
     {
+        throw new NotImplementedException();
         _deferredParsingTuple = (-1, -1, -1);
     }
 
     public void ConsumeCounterReset()
     {
+        throw new NotImplementedException();
         ConsumeCounter = 0;
     }
-
-    public void Reinitialize(List<SyntaxToken> tokenList)
+    
+    public void DeferParsingOfChildScope(ref CSharpParserState parserModel)
     {
-        // TODO: Don't duplicate the constructor here...
-#if DEBUG
-        if (tokenList.Count > 0 &&
-            tokenList[tokenList.Count - 1].SyntaxKind != SyntaxKind.EndOfFileToken)
-        {
-            throw new Clair.TextEditor.RazorLib.Exceptions.ClairTextEditorException($"The last token must be 'SyntaxKind.EndOfFileToken'.");
-        }
-#endif
-        TokenList = tokenList;
-
-        _index = 0;
-        ConsumeCounter = 0;
-        _deferredParsingTuple = (-1, -1, -1);
-        _deferredParsingTupleStack.Clear();
+        throw new NotImplementedException();
     }
 
     private SyntaxToken GetBadToken() => new SyntaxToken(SyntaxKind.BadToken, new(0, 0, 0));
@@ -458,11 +388,6 @@ public class TokenWalkerBuffer
                     throw new NotImplementedException($"The {nameof(SyntaxKind)}: '{syntaxKind}' was unrecognized.");
                 }
         }
-    }
-    
-    public void DeferParsingOfChildScope(ref CSharpParserState parserModel)
-    {
-        
     }
 }
 

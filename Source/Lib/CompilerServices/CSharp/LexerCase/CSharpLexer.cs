@@ -6,6 +6,53 @@ using Clair.TextEditor.RazorLib.Lexers.Models;
 
 namespace Clair.CompilerServices.CSharp.LexerCase;
 
+// Option 1:
+// =========
+// Lex the text in its entirety, and store the tokens in a List of SyntaxToken.
+//
+// pass the List of SyntaxToken to the Parser
+//
+// Parser then creates a sort of tree of nodes.
+
+// Option 2:
+// =========
+//
+// New list everytime you lex.
+// Avoids massive list in heap sitting around.
+//
+// The issue is the amortized storage of the list.
+//
+// A list starts at capacity 0
+// then increases to values I don't know of the top of my head.
+// 
+// Each increase in capacity is a reallocation of the list.
+// And thus this is EXTREMELY expensive.
+//
+// Lex the text in its entirety, and store the tokens in a List of SyntaxToken.
+//
+// pass the List of SyntaxToken to the Parser
+//
+// Parser then creates a sort of tree of nodes. 
+
+// Option 3:
+// =========
+// The parser invokes the Lexer, token by token and everytime you lex a token, it is immediately parsed
+// and thus it no longer is necessary to store the tokens in a list.
+//
+// 
+
+// I have this massive list in the Large Object Heap (LOH).
+// 
+// 40% heap fragmentation when I ran the Visual Studio Debugger
+// 
+// Speculation: easier for the GC to defragment the heap if I don't have these MASSIVE objects allocated.
+// Because otherwise you have to copy that objects data from one position in the heap to another.
+// A list is a contiguous block more or less.
+// And if the entry in the list is struct I believe you then have a contiguous block of memory foreach capacity in the list.
+// 
+// 
+// 
+
 public static class CSharpLexer
 {
     // So what is the difference betwen Lex and Lex_Frame() with respect to this newer code.
