@@ -532,7 +532,12 @@ public static class CSharpLexer
         }
 
         forceExit:
-        throw new NotImplementedException("forceExit");
+        var endOfFileTextSpan = new TextEditorTextSpan(
+            streamReaderWrap.PositionIndex,
+            streamReaderWrap.PositionIndex,
+            (byte)GenericDecorationKind.None,
+            streamReaderWrap.ByteIndex);
+        return new SyntaxToken(SyntaxKind.EndOfFileToken, endOfFileTextSpan);
     }
     
     /// <summary>

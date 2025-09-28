@@ -47,6 +47,10 @@ public static class CSharpParser
         
         while (true)
         {
+            // Console.WriteLine($"while (true): {parserModel.TokenWalker.Current.SyntaxKind}");
+            
+            // Task.Delay(1_000).Wait();
+        
             // The last statement in this while loop is conditionally: '_ = parserModel.TokenWalker.Consume();'.
             // Knowing this to be the case is extremely important.
 
@@ -158,6 +162,8 @@ public static class CSharpParser
 
             if (parserModel.TokenWalker.Current.SyntaxKind == SyntaxKind.EndOfFileToken)
             {
+                // Console.WriteLine("if (parserModel.TokenWalker.Current.SyntaxKind == SyntaxKind.EndOfFileToken)");
+            
                 bool deferredParsingOccurred = false;
                 
                 if (parserModel.ParseChildScopeStack.Count > 0)

@@ -177,10 +177,15 @@ public class TokenWalkerBuffer
         _peekSize = 0;
 
         _backtrackTuple = default;
+        
+        // Incase the implementation details of 'Consume' ever change just explicitly invoke it so the changes reflect here too.
+        _syntaxTokenBuffer[0] = Consume();
+        ConsumeCounterReset();
     }
 
     public SyntaxToken Consume()
     {
+        ++ConsumeCounter;
         return CSharpLexer.Lex_Frame(
             _binder,
             MiscTextSpanList,
@@ -291,7 +296,6 @@ public class TokenWalkerBuffer
 
     public void ConsumeCounterReset()
     {
-        throw new NotImplementedException();
         ConsumeCounter = 0;
     }
     
