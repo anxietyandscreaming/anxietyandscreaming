@@ -32,8 +32,7 @@ public ref partial struct CSharpParserState
         CSharpBinder binder,
         TokenWalkerBuffer tokenWalkerBuffer,
         int absolutePathId,
-        ref CSharpCompilationUnit compilationUnit,
-        ref CSharpLexerOutput lexerOutput)
+        ref CSharpCompilationUnit compilationUnit)
     {
         Binder = binder;
         Compilation = ref compilationUnit;

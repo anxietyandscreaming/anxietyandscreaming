@@ -4,6 +4,7 @@ using Clair.TextEditor.RazorLib.Decorations.Models;
 using Clair.Extensions.CompilerServices.Syntax;
 using Clair.Extensions.CompilerServices.Syntax.Utility;
 using Clair.CompilerServices.CSharp.LexerCase;
+using Clair.CompilerServices.CSharp.ParserCase;
 using Clair.CompilerServices.CSharp.BinderCase;
 
 namespace Clair.CompilerServices.CSharp.CompilerServiceCase;
@@ -222,6 +223,7 @@ public class TokenWalkerBuffer
 
     public SyntaxToken Consume()
     {
+        
         return default;
     }
 
@@ -458,8 +460,9 @@ public class TokenWalkerBuffer
         }
     }
     
-    public void DeferParsingOfChildScope()
+    public void DeferParsingOfChildScope(ref CSharpParserState parserModel)
     {
+        
     }
 }
 

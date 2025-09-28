@@ -2006,8 +2006,6 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
 
         try
         {
-            CSharpLexerOutput lexerOutput;
-
             // Convert the string to a byte array using a specific encoding
             byte[] byteArray = Encoding.UTF8.GetBytes(presentationModel.PendingCalculation.ContentAtRequest);
     
@@ -2026,11 +2024,12 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
                         __CSharpBinder,
                         resourceUri,
                         TextEditorService.LEXER_miscTextSpanList,
+                        _tokenWalkerBuffer,
                         _streamReaderWrap,
                         shouldUseSharedStringWalker: true);
                     
                     __CSharpBinder.StartCompilationUnit(absolutePathId);
-                    CSharpParser.Parse(absolutePathId, _tokenWalkerBuffer, ref cSharpCompilationUnit, __CSharpBinder, ref lexerOutput);
+                    CSharpParser.Parse(absolutePathId, _tokenWalkerBuffer, ref cSharpCompilationUnit, __CSharpBinder);
                 }
             }
             Return_ByteBuffer(byteBuffer);
@@ -2049,12 +2048,12 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
             
             if (shouldApplySyntaxHighlighting)
             {
-                editContext.TextEditorService.Model_ApplySyntaxHighlighting(
+                /*editContext.TextEditorService.Model_ApplySyntaxHighlighting(
                     editContext,
                     modelModifier,
                     lexerOutput.SyntaxTokenList.Select(x => x.TextSpan)
                         .Concat(lexerOutput.MiscTextSpanList)
-                        .Concat(__CSharpBinder.SymbolList.Skip(cSharpCompilationUnit.SymbolOffset).Take(cSharpCompilationUnit.SymbolLength).Select(x => x.TextSpan)));
+                        .Concat(__CSharpBinder.SymbolList.Skip(cSharpCompilationUnit.SymbolOffset).Take(cSharpCompilationUnit.SymbolLength).Select(x => x.TextSpan)));*/
             }
 
             _currentFileBeingParsedTuple = (absolutePathId, null);
@@ -2087,20 +2086,24 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
     
         var cSharpCompilationUnit = new CSharpCompilationUnit(compilationUnitKind);
 
-        CSharpLexerOutput lexerOutput;
-
         var byteBuffer = Rent_ByteBuffer();
         var charBuffer = Rent_CharBuffer();
         using (StreamReaderPooledBuffer sr = new StreamReaderPooledBuffer(resourceUri.Value, _safeOnlyUTF8Encoding, byteBuffer, charBuffer))
         {
             _streamReaderWrap.ReInitialize(sr);
-            
+                    
             TextEditorService.LEXER_miscTextSpanList.Clear();
-            lexerOutput = CSharpLexer.Lex(__CSharpBinder, resourceUri, TextEditorService.LEXER_miscTextSpanList, _streamReaderWrap, shouldUseSharedStringWalker: true);
-
+            _tokenWalkerBuffer.ReInitialize(
+                __CSharpBinder,
+                resourceUri,
+                TextEditorService.LEXER_miscTextSpanList,
+                _tokenWalkerBuffer,
+                _streamReaderWrap,
+                shouldUseSharedStringWalker: true);
+            
             FastParseTuple = (absolutePathId, sr);
             __CSharpBinder.StartCompilationUnit(absolutePathId);
-            CSharpParser.Parse(absolutePathId, ref cSharpCompilationUnit, __CSharpBinder, ref lexerOutput);
+            CSharpParser.Parse(absolutePathId, _tokenWalkerBuffer, ref cSharpCompilationUnit, __CSharpBinder);
         }
         Return_ByteBuffer(byteBuffer);
         Return_CharBuffer(charBuffer);

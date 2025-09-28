@@ -115,11 +115,13 @@ public static class CSharpLexer
                 case '/':
                     if (streamReaderWrap.PeekCharacter(1) == '/')
                     {
-                        return LexCommentSingleLineToken(miscTextSpanList, streamReaderWrap);
+                        LexCommentSingleLineToken(miscTextSpanList, streamReaderWrap);
+                        break;
                     }
                     else if (streamReaderWrap.PeekCharacter(1) == '*')
                     {
-                        return LexCommentMultiLineToken(miscTextSpanList, streamReaderWrap);
+                        LexCommentMultiLineToken(miscTextSpanList, streamReaderWrap);
+                        break;
                     }
                     else
                     {
@@ -483,7 +485,7 @@ public static class CSharpLexer
         }
 
         forceExit:
-        return;
+        throw new NotImplementedException("forceExit");
     }
     
     /// <summary>
@@ -493,7 +495,7 @@ public static class CSharpLexer
     /// The reason being: you don't know if it is a string until you've read all of the '$' (dollar sign characters).
     /// So in order to invoke this method the invoker had to have counted them.
     /// </summary>
-    private static void LexString(
+    private static SyntaxToken LexString(
         CSharpBinder binder,
         List<TextEditorTextSpan> miscTextSpanList,
         StreamReaderPooledBufferWrap streamReaderWrap,
@@ -501,186 +503,8 @@ public static class CSharpLexer
         int countDollarSign,
         bool useVerbatim)
     {
-        // Interpolated expressions will be done recursively and added to this 'SyntaxTokenList'
-        var syntaxTokenListIndex = lexerOutput.SyntaxTokenList.Count;
-    
-        var entryPositionIndex = streamReaderWrap.PositionIndex;
-        var byteEntryIndex = streamReaderWrap.ByteIndex;
-
-        var useInterpolation = countDollarSign > 0;
-        
-        if (useInterpolation)
-            _ = streamReaderWrap.ReadCharacter(); // Move past the '$' (dollar sign character); awkwardly even if there are many of these it is expected that the last one will not have been consumed.
-        if (useVerbatim)
-            _ = streamReaderWrap.ReadCharacter(); // Move past the '@' (at character)
-        
-        var useRaw = false;
-        int countDoubleQuotes = 0;
-        
-        if (!useVerbatim && streamReaderWrap.PeekCharacter(1) == '\"' && streamReaderWrap.PeekCharacter(2) == '\"')
-        {
-            useRaw = true;
-            
-            // Count the amount of double quotes to be used as the delimiter.
-            while (!streamReaderWrap.IsEof)
-            {
-                if (streamReaderWrap.CurrentCharacter != '\"')
-                    break;
-    
-                ++countDoubleQuotes;
-                _ = streamReaderWrap.ReadCharacter();
-            }
-        }
-        else
-        {
-            _ = streamReaderWrap.ReadCharacter(); // Move past the '"' (double quote character)
-        }
-
-        while (!streamReaderWrap.IsEof)
-        {
-            if (streamReaderWrap.CurrentCharacter == '\"')
-            {
-                if (useRaw)
-                {
-                    var matchDoubleQuotes = 0;
-                    
-                    while (!streamReaderWrap.IsEof)
-                    {
-                        if (streamReaderWrap.CurrentCharacter != '\"')
-                            break;
-                        
-                        _ = streamReaderWrap.ReadCharacter();
-                        if (++matchDoubleQuotes == countDoubleQuotes)
-                            goto foundEndDelimiter;
-                    }
-                    
-                    continue;
-                }
-                else if (useVerbatim && streamReaderWrap.NextCharacter == '\"')
-                {
-                    EscapeCharacterListAdd(miscTextSpanList, streamReaderWrap, ref previousEscapeCharacterTextSpan, new TextEditorTextSpan(
-                        streamReaderWrap.PositionIndex,
-                        streamReaderWrap.PositionIndex + 2,
-                        (byte)GenericDecorationKind.EscapeCharacterPrimary,
-                        streamReaderWrap.ByteIndex));
-    
-                    _ = streamReaderWrap.ReadCharacter();
-                }
-                else
-                {
-                    _ = streamReaderWrap.ReadCharacter();
-                    break;
-                }
-            }
-            else if (!useVerbatim && streamReaderWrap.CurrentCharacter == '\\')
-            {
-                EscapeCharacterListAdd(miscTextSpanList, streamReaderWrap, ref previousEscapeCharacterTextSpan, new TextEditorTextSpan(
-                    streamReaderWrap.PositionIndex,
-                    streamReaderWrap.PositionIndex + 2,
-                    (byte)GenericDecorationKind.EscapeCharacterPrimary,
-                    streamReaderWrap.ByteIndex));
-
-                // Presuming the escaped text is 2 characters, then read an extra character.
-                _ = streamReaderWrap.ReadCharacter();
-            }
-            else if (useInterpolation && streamReaderWrap.CurrentCharacter == '{')
-            {
-                // With raw, one is escaping by way of typing less.
-                // With normal interpolation, one is escaping by way of typing more.
-                //
-                // Thus, these are two separate cases written as an if-else.
-                if (useRaw)
-                {
-                    var interpolationTemporaryPositionIndex = streamReaderWrap.PositionIndex;
-                    var matchBrace = 0;
-                        
-                    while (!streamReaderWrap.IsEof)
-                    {
-                        if (streamReaderWrap.CurrentCharacter != '{')
-                            break;
-                        
-                        _ = streamReaderWrap.ReadCharacter();
-                        if (++matchBrace >= countDollarSign)
-                        {
-                            // Found yet another '{' match beyond what was needed.
-                            // So, this logic will match from the inside to the outside.
-                            if (streamReaderWrap.CurrentCharacter == '{')
-                            {
-                                ++interpolationTemporaryPositionIndex;
-                            }
-                            else
-                            {
-                                // 'LexInterpolatedExpression' is expected to consume one more after it is finished.
-                                // Thus, if this while loop were to consume, it would skip the
-                                // closing double quotes if the expression were the last thing in the string.
-                                //
-                                // So, a backtrack is done.
-                                LexInterpolatedExpression(
-                                    binder,
-                                    miscTextSpanList,
-                                    streamReaderWrap,
-                                    ref previousEscapeCharacterTextSpan,
-                                    startInclusiveOpenDelimiter: interpolationTemporaryPositionIndex,
-                                    countDollarSign: countDollarSign,
-                                    useRaw);
-                                streamReaderWrap.BacktrackCharacterNoReturnValue();
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    if (streamReaderWrap.NextCharacter == '{')
-                    {
-                        _ = streamReaderWrap.ReadCharacter();
-                    }
-                    else
-                    {
-                        // 'LexInterpolatedExpression' is expected to consume one more after it is finished.
-                        // Thus, if this while loop were to consume, it would skip the
-                        // closing double quotes if the expression were the last thing in the string.
-                        LexInterpolatedExpression(
-                            binder,
-                            miscTextSpanList,
-                            streamReaderWrap,
-                            ref previousEscapeCharacterTextSpan,
-                            startInclusiveOpenDelimiter: streamReaderWrap.PositionIndex,
-                            countDollarSign: countDollarSign,
-                            useRaw);
-                        continue;
-                    }
-                }
-            }
-
-            _ = streamReaderWrap.ReadCharacter();
-        }
-
-        foundEndDelimiter:
-
-        var textSpan = new TextEditorTextSpan(
-            entryPositionIndex,
-            streamReaderWrap.PositionIndex,
-            (byte)GenericDecorationKind.StringLiteral,
-            byteEntryIndex);
-
-        if (useInterpolation)
-        {
-            lexerOutput.SyntaxTokenList.Insert(
-                syntaxTokenListIndex,
-                new SyntaxToken(SyntaxKind.StringInterpolatedStartToken, textSpan));
-                
-            lexerOutput.SyntaxTokenList.Add(new SyntaxToken(
-                SyntaxKind.StringInterpolatedEndToken,
-                new TextEditorTextSpan(
-                    streamReaderWrap.PositionIndex,
-                    streamReaderWrap.PositionIndex,
-                    (byte)GenericDecorationKind.None,
-                    streamReaderWrap.ByteIndex)));
-        }
-        else
-        {
-            lexerOutput.SyntaxTokenList.Add(new SyntaxToken(SyntaxKind.StringLiteralToken, textSpan));
-        }
+        // I feel sad
+        return new SyntaxToken();
     }
     
     /// <summary>
@@ -701,88 +525,12 @@ public static class CSharpLexer
         int countDollarSign,
         bool useRaw)
     {
-        int unmatchedBraceCounter;
-        
-        if (useRaw)
-        {
-            // Starts inside the expression
-
-            // TODO: streamReaderWrap.ByteIndex - countDollarSign
-            lexerOutput.MiscTextSpanList.Add(new TextEditorTextSpan(
-                streamReaderWrap.PositionIndex - countDollarSign,
-                streamReaderWrap.PositionIndex,
-                (byte)GenericDecorationKind.None,
-                streamReaderWrap.ByteIndex));
-        
-            /*var readOpenDelimiterCount = streamReaderWrap.PositionIndex - startInclusiveOpenDelimiter;
-        
-            for (; readOpenDelimiterCount < countDollarSign; readOpenDelimiterCount++)
-            {
-                _ = streamReaderWrap.ReadCharacter();
-            }*/
-            
-            unmatchedBraceCounter = countDollarSign;
-        }
-        else
-        {
-            // Starts at the OpenBraceToken
-        
-            lexerOutput.MiscTextSpanList.Add(new TextEditorTextSpan(
-                streamReaderWrap.PositionIndex,
-                streamReaderWrap.PositionIndex + 1,
-                (byte)GenericDecorationKind.None,
-                streamReaderWrap.ByteIndex));
-                
-            var readOpenDelimiterCount = streamReaderWrap.PositionIndex - startInclusiveOpenDelimiter;
-        
-            for (; readOpenDelimiterCount < countDollarSign; readOpenDelimiterCount++)
-            {
-                _ = streamReaderWrap.ReadCharacter();
-            }
-            
-            unmatchedBraceCounter = countDollarSign;
-        }
-    
-        // Recursive solution that lexes the interpolated expression only, (not including the '{' or '}').
-        Lex_Frame(
-            binder,
-            miscTextSpanList,
-            streamReaderWrap,
-            ref previousEscapeCharacterTextSpan,
-            ref unmatchedBraceCounter);
-        
-        if (useRaw)
-        {
-            _ = streamReaderWrap.ReadCharacter(); // This consumes the final '}'.
-
-            // TODO: streamReaderWrap.ByteIndex - 1
-            lexerOutput.SyntaxTokenList.Add(new SyntaxToken(
-                SyntaxKind.StringInterpolatedContinueToken,
-                new TextEditorTextSpan(
-                    streamReaderWrap.PositionIndex - 1,
-                    streamReaderWrap.PositionIndex,
-                    (byte)GenericDecorationKind.None,
-                    streamReaderWrap.ByteIndex)));
-        }
-        else
-        {
-            _ = streamReaderWrap.ReadCharacter(); // This consumes the final '}'.
-
-            // TODO: streamReaderWrap.ByteIndex - 1
-            lexerOutput.SyntaxTokenList.Add(new SyntaxToken(
-                SyntaxKind.StringInterpolatedContinueToken,
-                new TextEditorTextSpan(
-                    streamReaderWrap.PositionIndex - 1,
-                    streamReaderWrap.PositionIndex,
-                    (byte)GenericDecorationKind.None,
-                    streamReaderWrap.ByteIndex)));
-        }
     }
     
     private static void EscapeCharacterListAdd(
         List<TextEditorTextSpan> miscTextSpanList, StreamReaderPooledBufferWrap streamReaderWrap, ref TextEditorTextSpan previousEscapeCharacterTextSpan, TextEditorTextSpan textSpan)
     {
-        if (lexerOutput.MiscTextSpanList.Count > 0)
+        if (miscTextSpanList.Count > 0)
         {
             if (previousEscapeCharacterTextSpan.EndExclusiveIndex == textSpan.StartInclusiveIndex &&
                 previousEscapeCharacterTextSpan.DecorationByte == (byte)GenericDecorationKind.EscapeCharacterPrimary)
@@ -795,7 +543,7 @@ public static class CSharpLexer
         }
         
         previousEscapeCharacterTextSpan = textSpan;
-        lexerOutput.MiscTextSpanList.Add(textSpan);
+        miscTextSpanList.Add(textSpan);
     }
     
     public static SyntaxToken LexIdentifierOrKeywordOrKeywordContextual(CSharpBinder binder, List<TextEditorTextSpan> miscTextSpanList, StreamReaderPooledBufferWrap streamReaderWrap)
@@ -2345,7 +2093,7 @@ public static class CSharpLexer
         }
     }
     
-    public static void LexNumericLiteralToken(CSharpBinder binder, List<TextEditorTextSpan> miscTextSpanList, StreamReaderPooledBufferWrap streamReaderWrap)
+    public static SyntaxToken LexNumericLiteralToken(CSharpBinder binder, List<TextEditorTextSpan> miscTextSpanList, StreamReaderPooledBufferWrap streamReaderWrap)
     {
         var entryPositionIndex = streamReaderWrap.PositionIndex;
         var byteEntryIndex = streamReaderWrap.ByteIndex;
@@ -2385,10 +2133,10 @@ public static class CSharpLexer
             (byte)GenericDecorationKind.None,
             byteEntryIndex);
 
-        lexerOutput.SyntaxTokenList.Add(new SyntaxToken(SyntaxKind.NumericLiteralToken, textSpan));
+        return new SyntaxToken(SyntaxKind.NumericLiteralToken, textSpan);
     }
     
-    public static void LexCharLiteralToken(CSharpBinder binder, List<TextEditorTextSpan> miscTextSpanList, StreamReaderPooledBufferWrap streamReaderWrap)
+    public static SyntaxToken LexCharLiteralToken(CSharpBinder binder, List<TextEditorTextSpan> miscTextSpanList, StreamReaderPooledBufferWrap streamReaderWrap)
     {
         var delimiter = '\'';
         var escapeCharacter = '\\';
@@ -2408,7 +2156,7 @@ public static class CSharpLexer
             }
             else if (streamReaderWrap.CurrentCharacter == escapeCharacter)
             {
-                lexerOutput.MiscTextSpanList.Add(new TextEditorTextSpan(
+                miscTextSpanList.Add(new TextEditorTextSpan(
                     streamReaderWrap.PositionIndex,
                     streamReaderWrap.PositionIndex + 2,
                     (byte)GenericDecorationKind.EscapeCharacterPrimary,
@@ -2428,7 +2176,7 @@ public static class CSharpLexer
             (byte)GenericDecorationKind.StringLiteral,
             byteEntryIndex);
 
-        lexerOutput.SyntaxTokenList.Add(new SyntaxToken(SyntaxKind.CharLiteralToken, textSpan));
+        return new SyntaxToken(SyntaxKind.CharLiteralToken, textSpan);
     }
     
     public static void LexCommentSingleLineToken(List<TextEditorTextSpan> miscTextSpanList, StreamReaderPooledBufferWrap streamReaderWrap)
@@ -2463,7 +2211,7 @@ public static class CSharpLexer
             (byte)GenericDecorationKind.CommentSingleLine,
             byteEntryIndex);
 
-        lexerOutput.MiscTextSpanList.Add(textSpan);
+        miscTextSpanList.Add(textSpan);
     }
     
     public static void LexCommentMultiLineToken(List<TextEditorTextSpan> miscTextSpanList, StreamReaderPooledBufferWrap streamReaderWrap)
@@ -2505,10 +2253,10 @@ public static class CSharpLexer
             (byte)GenericDecorationKind.CommentMultiLine,
             byteEntryIndex);
 
-        lexerOutput.MiscTextSpanList.Add(textSpan);
+        miscTextSpanList.Add(textSpan);
     }
     
-    public static void LexPreprocessorDirectiveToken(List<TextEditorTextSpan> miscTextSpanList, StreamReaderPooledBufferWrap streamReaderWrap)
+    public static SyntaxToken LexPreprocessorDirectiveToken(List<TextEditorTextSpan> miscTextSpanList, StreamReaderPooledBufferWrap streamReaderWrap)
     {
         var entryPositionIndex = streamReaderWrap.PositionIndex;
         var byteEntryIndex = streamReaderWrap.ByteIndex;
@@ -2549,6 +2297,6 @@ public static class CSharpLexer
             (byte)GenericDecorationKind.PreprocessorDirective,
             byteEntryIndex);
 
-        lexerOutput.SyntaxTokenList.Add(new SyntaxToken(SyntaxKind.PreprocessorDirectiveToken, textSpan));
+        return new SyntaxToken(SyntaxKind.PreprocessorDirectiveToken, textSpan);
     }
 }
