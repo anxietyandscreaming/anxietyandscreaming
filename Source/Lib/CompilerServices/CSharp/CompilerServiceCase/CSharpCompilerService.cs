@@ -2035,6 +2035,11 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
             Return_ByteBuffer(byteBuffer);
             Return_CharBuffer(charBuffer);
         }
+        catch (Exception e)
+        {
+            // TODO: Remove this catch, just is being used to debug something temporarily.
+            throw;
+        }
         finally
         {
             //var diagnosticTextSpans = cSharpCompilationUnit.DiagnosticList
@@ -2048,10 +2053,12 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
             
             if (shouldApplySyntaxHighlighting)
             {
-                /*editContext.TextEditorService.Model_ApplySyntaxHighlighting(
+                editContext.TextEditorService.Model_ApplySyntaxHighlighting(
                     editContext,
                     modelModifier,
-                    lexerOutput.SyntaxTokenList.Select(x => x.TextSpan)
+                    TextEditorService.LEXER_miscTextSpanList);
+
+                    /*lexerOutput.SyntaxTokenList.Select(x => x.TextSpan)
                         .Concat(lexerOutput.MiscTextSpanList)
                         .Concat(__CSharpBinder.SymbolList.Skip(cSharpCompilationUnit.SymbolOffset).Take(cSharpCompilationUnit.SymbolLength).Select(x => x.TextSpan)));*/
             }

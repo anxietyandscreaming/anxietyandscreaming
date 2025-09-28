@@ -37,13 +37,6 @@ public class TokenWalkerBuffer
     public List<TextEditorTextSpan> MiscTextSpanList { get; private set; }
     
     public int ConsumeCounter { get; private set; }
-
-    public IReadOnlyList<SyntaxToken> TokenList { get; private set; }
-
-    /// <summary>If there are any tokens, then assume the final token is the end of file token. Otherwise, fabricate an end of file token.</summary>
-    private SyntaxToken EOF => TokenList.Count > 0
-        ? TokenList[TokenList.Count - 1]
-        : new SyntaxToken(SyntaxKind.EndOfFileToken, new(0, 0, 0));
     
     private StreamReaderPooledBufferWrap StreamReaderWrap { get; set; }
 
@@ -220,8 +213,9 @@ public class TokenWalkerBuffer
                 StreamReaderWrap,
                 ref _previousEscapeCharacterTextSpan,
                 ref _interpolatedExpressionUnmatchedBraceCount);
+            MiscTextSpanList.Add(Current.TextSpan);
         }
-        
+
         return Current;
     }
     
@@ -345,8 +339,6 @@ public class TokenWalkerBuffer
     /// </summary>
     public void BacktrackNoReturnValue()
     {
-        throw new NotImplementedException();
-        
         if (_peekIndex != -1)
         {
             // This means a Peek() was performed,
@@ -366,39 +358,7 @@ public class TokenWalkerBuffer
         _peekBuffer[0] = _backtrackTuple;
         _peekIndex++;
         _peekSize++;
-
-        /*
-        // This is duplicated inside the ReadCharacter() code.
-        StreamReader.Read(_streamReaderCharBuffer);
-        _streamPositionIndex++;
-        _streamByteIndex += StreamReader.CurrentEncoding.GetByteCount(_streamReaderCharBuffer);
-        */
-        
-        /*
-        public SyntaxToken Backtrack()
-        {
-            throw new NotImplementedException();
-            
-            if (_index > 0)
-            {
-                _index--;
-                ConsumeCounter--;
-            }
-    
-            return Peek(_index);
-        }
-    
-        public void BacktrackNoReturnValue()
-        {
-            throw new NotImplementedException();
-            
-            if (_index > 0)
-            {
-                _index--;
-                ConsumeCounter--;
-            }
-        }
-        */
+        --ConsumeCounter;
     }
 
     /// <summary>If the syntaxKind passed in does not match the current token, then a syntax token with that syntax kind will be fabricated and then returned instead.</summary>
