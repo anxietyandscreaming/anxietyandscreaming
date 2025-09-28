@@ -15,49 +15,35 @@ namespace Clair.CompilerServices.CSharp.CompilerServiceCase;
 /// </summary>
 public class TokenWalkerBuffer
 {
-    public List<TextEditorTextSpan> MiscTextSpanList { get; private set; }
-    
     private TextEditorTextSpan _previousEscapeCharacterTextSpan;
+    private int _interpolatedExpressionUnmatchedBraceCount;
+    
+    /// <summary>
+    /// Use '-1' for each int value to indicate 'null' for the entirety of the _deferredParsingTuple;
+    /// </summary>
+    private (int openTokenIndex, int closeTokenIndex, int tokenIndexToRestore) _deferredParsingTuple = (-1, -1, -1);
 
     /// <summary>
-    /// ReInitialize must be invoked at the start of every "new usage" of the pooled instance.
-    /// This invocation having occurred is NOT asserted, so neglecting to invoke it is undefined behavior.
+    /// '-1' should not appear for any of the int values in the stack.
+    /// _deferredParsingTuple is the cached Peek() result.
+    ///
+    /// If this stack is empty, them the cached Peek() result should be '(-1, -1, -1)'.
     /// </summary>
-    public void ReInitialize(
-        CSharpBinder binder,
-        ResourceUri resourceUri,
-        List<TextEditorTextSpan> miscTextSpanList,
-        TokenWalkerBuffer tokenWalkerBuffer,
-        StreamReaderPooledBufferWrap streamReaderWrap,
-        bool shouldUseSharedStringWalker)
-    {
-        _index = 0;
-        ConsumeCounter = 0;
-        _deferredParsingTuple = (-1, -1, -1);
-        _deferredParsingTupleStack.Clear();
+    private Stack<(int openTokenIndex, int closeTokenIndex, int tokenIndexToRestore)>? _deferredParsingTupleStack = new();
     
-        MiscTextSpanList = miscTextSpanList;
-        
-        _previousEscapeCharacterTextSpan = new TextEditorTextSpan(
-            0,
-            0,
-            (byte)GenericDecorationKind.None);
-            
-        var interpolatedExpressionUnmatchedBraceCount = -1;
-        
-        StreamReaderWrap = streamReaderWrap;
-        
-        // You probably don't have to set these to default because they just get overwritten when the time comes.
-        // But I'm unsure, and there is far more valuable changes to be made so I'm just gonna set them to default.
-        _peekBuffer[0] = default;
-        _peekBuffer[1] = default;
-        _peekBuffer[2] = default;
+    /// <summary>Trust that ReInitialize(/*...*/) will be invoked is presumed here.</summary>
+    private CSharpBinder _binder = null!;
 
-        _peekIndex = -1;
-        _peekSize = 0;
+    public List<TextEditorTextSpan> MiscTextSpanList { get; private set; }
+    
+    public int ConsumeCounter { get; private set; }
 
-        _backtrackTuple = default;
-    }
+    public IReadOnlyList<SyntaxToken> TokenList { get; private set; }
+
+    /// <summary>If there are any tokens, then assume the final token is the end of file token. Otherwise, fabricate an end of file token.</summary>
+    private SyntaxToken EOF => TokenList.Count > 0
+        ? TokenList[TokenList.Count - 1]
+        : new SyntaxToken(SyntaxKind.EndOfFileToken, new(0, 0, 0));
     
     private StreamReaderPooledBufferWrap StreamReaderWrap { get; set; }
 
@@ -81,8 +67,6 @@ public class TokenWalkerBuffer
     {
         get
         {
-            throw new NotImplementedException();
-            
             if (_peekIndex == -1)
             {
                 return _index;
@@ -153,10 +137,56 @@ public class TokenWalkerBuffer
         }
     }
 
+    /// <summary>
+    /// ReInitialize must be invoked at the start of every "new usage" of the pooled instance.
+    /// This invocation having occurred is NOT asserted, so neglecting to invoke it is undefined behavior.
+    /// </summary>
+    public void ReInitialize(
+        CSharpBinder binder,
+        ResourceUri resourceUri,
+        List<TextEditorTextSpan> miscTextSpanList,
+        TokenWalkerBuffer tokenWalkerBuffer,
+        StreamReaderPooledBufferWrap streamReaderWrap,
+        bool shouldUseSharedStringWalker)
+    {
+        _binder = binder;
+    
+        _index = 0;
+        ConsumeCounter = 0;
+        _deferredParsingTuple = (-1, -1, -1);
+        _deferredParsingTupleStack.Clear();
+    
+        MiscTextSpanList = miscTextSpanList;
+        
+        _previousEscapeCharacterTextSpan = new TextEditorTextSpan(
+            0,
+            0,
+            (byte)GenericDecorationKind.None);
+            
+        _interpolatedExpressionUnmatchedBraceCount = -1;
+        
+        StreamReaderWrap = streamReaderWrap;
+        
+        // You probably don't have to set these to default because they just get overwritten when the time comes.
+        // But I'm unsure, and there is far more valuable changes to be made so I'm just gonna set them to default.
+        _peekBuffer[0] = default;
+        _peekBuffer[1] = default;
+        _peekBuffer[2] = default;
+
+        _peekIndex = -1;
+        _peekSize = 0;
+
+        _backtrackTuple = default;
+    }
+
     public SyntaxToken Consume()
     {
-        throw new NotImplementedException();
-        return default;
+        return CSharpLexer.Lex_Frame(
+            _binder,
+            MiscTextSpanList,
+            StreamReaderWrap,
+            ref _previousEscapeCharacterTextSpan,
+            ref _interpolatedExpressionUnmatchedBraceCount);
     }
 
     public SyntaxToken Peek(int offset)
@@ -225,28 +255,6 @@ public class TokenWalkerBuffer
         }
         */
     }
-
-    /// <summary>
-    /// Use '-1' for each int value to indicate 'null' for the entirety of the _deferredParsingTuple;
-    /// </summary>
-    private (int openTokenIndex, int closeTokenIndex, int tokenIndexToRestore) _deferredParsingTuple = (-1, -1, -1);
-
-    /// <summary>
-    /// '-1' should not appear for any of the int values in the stack.
-    /// _deferredParsingTuple is the cached Peek() result.
-    ///
-    /// If this stack is empty, them the cached Peek() result should be '(-1, -1, -1)'.
-    /// </summary>
-    private Stack<(int openTokenIndex, int closeTokenIndex, int tokenIndexToRestore)>? _deferredParsingTupleStack = new();
-
-    public int ConsumeCounter { get; private set; }
-
-    public IReadOnlyList<SyntaxToken> TokenList { get; private set; }
-
-    /// <summary>If there are any tokens, then assume the final token is the end of file token. Otherwise, fabricate an end of file token.</summary>
-    private SyntaxToken EOF => TokenList.Count > 0
-        ? TokenList[TokenList.Count - 1]
-        : new SyntaxToken(SyntaxKind.EndOfFileToken, new(0, 0, 0));
 
     /// <summary>If the syntaxKind passed in does not match the current token, then a syntax token with that syntax kind will be fabricated and then returned instead.</summary>
     public SyntaxToken Match(SyntaxKind expectedSyntaxKind)

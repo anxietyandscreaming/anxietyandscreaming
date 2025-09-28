@@ -45,14 +45,6 @@ public static class CSharpParser
             absolutePathId,
             ref compilationUnit);
         
-        // lexerOutput = CSharpLexer.Lex(binder, resourceUri, TextEditorService.LEXER_miscTextSpanList, _streamReaderWrap, shouldUseSharedStringWalker: true);
-        
-        /*while (true)
-        {
-        }*/
-        
-        throw new NotImplementedException();
-        
         while (true)
         {
             // The last statement in this while loop is conditionally: '_ = parserModel.TokenWalker.Consume();'.
