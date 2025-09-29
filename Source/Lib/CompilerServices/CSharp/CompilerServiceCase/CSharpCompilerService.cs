@@ -2053,6 +2053,9 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
             
             if (shouldApplySyntaxHighlighting)
             {
+                TextEditorService.LEXER_miscTextSpanList.AddRange(
+                    __CSharpBinder.SymbolList.Skip(cSharpCompilationUnit.SymbolOffset).Take(cSharpCompilationUnit.SymbolLength).Select(x => x.TextSpan));
+                    
                 editContext.TextEditorService.Model_ApplySyntaxHighlighting(
                     editContext,
                     modelModifier,
