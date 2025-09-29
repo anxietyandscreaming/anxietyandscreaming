@@ -263,6 +263,7 @@ public static partial class Parser
             return;
         }
 
+        // TODO: Global scope -1 `int aaa;`
         var nodeValue = parserModel.Binder.NodeList[parserModel.Compilation.NodeOffset + parserModel.ScopeCurrent.NodeSubIndex];
 
         if (parserModel.ScopeCurrent.OwnerSyntaxKind == SyntaxKind.TypeDefinitionNode &&

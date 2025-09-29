@@ -38,7 +38,7 @@ public class TokenWalkerBuffer
     
     public int ConsumeCounter { get; private set; }
     
-    private StreamReaderPooledBufferWrap StreamReaderWrap { get; set; }
+    public StreamReaderPooledBufferWrap StreamReaderWrap { get; set; }
 
     // With respect to the StreamReaderPooledBufferWrap, this relates to reading 1 character at a time.
     // In terms of connecting each part of the StreamReaderPooledBuffer to its respective wording in TokenWalkerPooledBuffer.
@@ -68,10 +68,6 @@ public class TokenWalkerBuffer
             {
                 return _peekBuffer[_peekIndex].PositionIndex;
             }
-        }
-        set
-        {
-            _index = value;
         }
     }
 
@@ -178,6 +174,8 @@ public class TokenWalkerBuffer
 
     public SyntaxToken Consume()
     {
+        ++ConsumeCounter;
+    
         if (_peekIndex != -1)
         {
             _backtrackTuple = _peekBuffer[_peekIndex++];
@@ -190,6 +188,8 @@ public class TokenWalkerBuffer
         }
         else
         {
+            
+        
             if (StreamReaderWrap.IsEof)
             {
                 var endOfFileTextSpan = new TextEditorTextSpan(
@@ -204,9 +204,8 @@ public class TokenWalkerBuffer
 
             _backtrackTuple = (_syntaxTokenBuffer[0], Index);
 
-            _index++;
-            
-            ++ConsumeCounter;
+            ++_index;
+
             _syntaxTokenBuffer[0] = CSharpLexer.Lex_Frame(
                 _binder,
                 MiscTextSpanList,
@@ -325,7 +324,7 @@ public class TokenWalkerBuffer
 
             // This is duplicated inside the ReadCharacter() code.
 
-            _index++;
+            //_index++;
             _syntaxTokenBuffer[0] = Consume_NoCounter();
         }
 

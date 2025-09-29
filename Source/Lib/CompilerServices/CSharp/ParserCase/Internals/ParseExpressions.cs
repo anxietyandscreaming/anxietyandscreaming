@@ -77,6 +77,8 @@ public static partial class Parser
             }
             else
             {
+                //Console.WriteLine($"{parserModel.ExpressionPrimary.SyntaxKind} + ({parserModel.TokenWalker.Index - 1}, {parserModel.TokenWalker.Current.SyntaxKind}, {parserModel.TokenWalker.StreamReaderWrap.PositionIndex}=={parserModel.TokenWalker.Current.TextSpan.EndExclusiveIndex})");
+                
                 switch (parserModel.ExpressionPrimary.SyntaxKind)
                 {
                     case SyntaxKind.EmptyExpressionNode:
