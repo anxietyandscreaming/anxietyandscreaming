@@ -359,7 +359,7 @@ public static partial class Parser
             switch (parserModel.ExpressionPrimary.SyntaxKind)
             {
                 case SyntaxKind.CollectionInitializationNode:
-                    parserModel.ExpressionPrimary = CollectionInitializationMergeExpression(expressionSecondary, ref parserModel);   
+                    parserModel.ExpressionPrimary = CollectionInitializationMergeExpression(expressionSecondary, ref parserModel);
                     break;
                 case SyntaxKind.TernaryExpressionNode:
                     parserModel.ExpressionPrimary = TernaryMergeExpression(expressionSecondary, ref parserModel);

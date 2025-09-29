@@ -28,7 +28,8 @@ public struct Scope
         ParentScopeSubIndex = parentScopeSubIndex;
         SelfScopeSubIndex = selfScopeSubIndex;
         NodeSubIndex = nodeSubIndex;
-        PermitCodeBlockParsing = permitCodeBlockParsing;
+        // #2025-09-28_Disable_PermitCodeBlockParsing
+        //PermitCodeBlockParsing = permitCodeBlockParsing;
         IsImplicitOpenCodeBlockTextSpan = isImplicitOpenCodeBlockTextSpan;
         OwnerSyntaxKind = ownerSyntaxKind;
     }
@@ -44,7 +45,10 @@ public struct Scope
     /// When this is '-1', there is no tracked ICodeBlockOwner instance.
     /// </summary>
     public int NodeSubIndex { get; set; }
-    public bool PermitCodeBlockParsing { get; set; }
+    // #2025-09-28_Disable_PermitCodeBlockParsing
+    // TODO: Deferred parsing is being disabled. All code that needs to change is "tagged" with a comment containing:
+    //     "#2025-09-28_Disable_PermitCodeBlockParsing" (exclude the double-quotes)
+    public bool PermitCodeBlockParsing => true;//{ get; set; }
     public bool IsImplicitOpenCodeBlockTextSpan { get; set; }
     public SyntaxKind OwnerSyntaxKind { get; set; }
     
