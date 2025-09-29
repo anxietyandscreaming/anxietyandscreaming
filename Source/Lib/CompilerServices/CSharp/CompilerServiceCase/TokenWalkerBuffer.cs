@@ -405,11 +405,9 @@ public class TokenWalkerBuffer
 
     private SyntaxToken GetBadToken() => new SyntaxToken(SyntaxKind.BadToken, new(0, 0, 0));
     
-    public static SyntaxToken FabricateToken(SyntaxKind syntaxKind)
+    public SyntaxToken FabricateToken(SyntaxKind syntaxKind)
     {
-        // !!! get the currentTextSpan variable
-        throw new NotImplementedException("var currentTextSpan = tokenWalker.Peek(0).TextSpan;");
-        TextEditorTextSpan currentTextSpan = default;
+        var currentTextSpan = Peek(0).TextSpan;
 
         switch (syntaxKind)
         {
