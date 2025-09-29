@@ -168,13 +168,15 @@ public class TokenWalkerBuffer
         _backtrackTuple = default;
         
         // Incase the implementation details of 'Consume' ever change just explicitly invoke it so the changes reflect here too.
-        _syntaxTokenBuffer[0] = Consume();
+        _ = Consume();
         ConsumeCounterReset();
     }
 
     public SyntaxToken Consume()
     {
         ++ConsumeCounter;
+
+        var localCurrent = Current;
     
         if (_peekIndex != -1)
         {
@@ -188,8 +190,6 @@ public class TokenWalkerBuffer
         }
         else
         {
-            
-        
             if (StreamReaderWrap.IsEof)
             {
                 var endOfFileTextSpan = new TextEditorTextSpan(
@@ -198,7 +198,7 @@ public class TokenWalkerBuffer
                     (byte)GenericDecorationKind.None,
                     StreamReaderWrap.ByteIndex);
                 _syntaxTokenBuffer[0] = new SyntaxToken(SyntaxKind.EndOfFileToken, endOfFileTextSpan);
-                return Current;
+                return localCurrent;
             }
             // This is duplicated more than once inside the Peek(int) code.
 
@@ -212,10 +212,10 @@ public class TokenWalkerBuffer
                 StreamReaderWrap,
                 ref _previousEscapeCharacterTextSpan,
                 ref _interpolatedExpressionUnmatchedBraceCount);
-            MiscTextSpanList.Add(Current.TextSpan);
+            MiscTextSpanList.Add(localCurrent.TextSpan);
         }
 
-        return Current;
+        return localCurrent;
     }
     
     private SyntaxToken Consume_NoCounter()
@@ -363,7 +363,7 @@ public class TokenWalkerBuffer
     /// <summary>If the syntaxKind passed in does not match the current token, then a syntax token with that syntax kind will be fabricated and then returned instead.</summary>
     public SyntaxToken Match(SyntaxKind expectedSyntaxKind)
     {
-        throw new NotImplementedException();
+        //throw new NotImplementedException();
         
         if (Current.SyntaxKind == expectedSyntaxKind)
             return Consume();
