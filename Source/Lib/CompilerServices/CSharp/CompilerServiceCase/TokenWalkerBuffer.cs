@@ -140,7 +140,7 @@ public class TokenWalkerBuffer
     {
         _binder = binder;
     
-        _index = 0;
+        _index = -1;
         ConsumeCounter = 0;
         _deferredParsingTuple = (-1, -1, -1);
         _deferredParsingTupleStack.Clear();
@@ -170,13 +170,19 @@ public class TokenWalkerBuffer
         // Incase the implementation details of 'Consume' ever change just explicitly invoke it so the changes reflect here too.
         _ = Consume();
         ConsumeCounterReset();
+        
+        Console.WriteLine("\n====");
+        Console.WriteLine($"current:{Current.SyntaxKind}");
+        Console.WriteLine($"Next:{Next.SyntaxKind}");
+        Console.WriteLine($"current:{Current.SyntaxKind}");
+        Console.WriteLine("====");
     }
 
     public SyntaxToken Consume()
     {
         ++ConsumeCounter;
 
-        var localCurrent = Current;
+        var consumedToken = Current;
     
         if (_peekIndex != -1)
         {
@@ -198,30 +204,23 @@ public class TokenWalkerBuffer
                     (byte)GenericDecorationKind.None,
                     StreamReaderWrap.ByteIndex);
                 _syntaxTokenBuffer[0] = new SyntaxToken(SyntaxKind.EndOfFileToken, endOfFileTextSpan);
-                return localCurrent;
+                return consumedToken;
             }
             // This is duplicated more than once inside the Peek(int) code.
 
             _backtrackTuple = (_syntaxTokenBuffer[0], Index);
 
             ++_index;
-
             _syntaxTokenBuffer[0] = CSharpLexer.Lex_Frame(
                 _binder,
                 MiscTextSpanList,
                 StreamReaderWrap,
                 ref _previousEscapeCharacterTextSpan,
                 ref _interpolatedExpressionUnmatchedBraceCount);
-            MiscTextSpanList.Add(localCurrent.TextSpan);
+            MiscTextSpanList.Add(_syntaxTokenBuffer[0].TextSpan);
         }
 
-        return localCurrent;
-    }
-    
-    private SyntaxToken Consume_NoCounter()
-    {
-        --ConsumeCounter;
-        return Consume();
+        return consumedToken;
     }
 
     public SyntaxToken Peek(int offset)
@@ -250,7 +249,6 @@ public class TokenWalkerBuffer
         // The _peekIndex is _peekCount - 1
         //
         // 
-
 
         if (offset <= -1)
             throw new ClairTextEditorException($"{nameof(offset)} must be > -1");
@@ -324,8 +322,14 @@ public class TokenWalkerBuffer
 
             // This is duplicated inside the ReadCharacter() code.
 
-            //_index++;
-            _syntaxTokenBuffer[0] = Consume_NoCounter();
+            ++_index;
+            _syntaxTokenBuffer[0] = CSharpLexer.Lex_Frame(
+                _binder,
+                MiscTextSpanList,
+                StreamReaderWrap,
+                ref _previousEscapeCharacterTextSpan,
+                ref _interpolatedExpressionUnmatchedBraceCount);
+            MiscTextSpanList.Add(_syntaxTokenBuffer[0].TextSpan);
         }
 
         // TODO: Peek EOF

@@ -47,7 +47,7 @@ public static class CSharpParser
         
         while (true)
         {
-            // Console.WriteLine($"while (true): {parserModel.TokenWalker.Current.SyntaxKind}");
+            Console.WriteLine($"while (true): {parserModel.TokenWalker.Current.SyntaxKind}");
             
             // Task.Delay(1_000).Wait();
         

@@ -2212,7 +2212,7 @@ public static partial class Parser
                     ambiguousExpressionNode,
                     ref parserModel);
             }
-            
+
             return ambiguousExpressionNode;
         }
     
