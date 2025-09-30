@@ -557,7 +557,18 @@ public static class CSharpLexer
     {
         var entryPositionIndex = streamReaderWrap.PositionIndex;
         var byteEntryIndex = streamReaderWrap.ByteIndex;
-        streamReaderWrap.ReadCharacter();
+        // TODO: Temporarily just do two while loops so you find the opening double quote...
+        // ...for string interpolation you enter method on '$' and it clobbers the file otherwise.
+        while (!streamReaderWrap.IsEof)
+        {
+            if (streamReaderWrap.CurrentCharacter == '"')
+            {
+                streamReaderWrap.ReadCharacter();
+                break;
+            }
+
+            streamReaderWrap.ReadCharacter();
+        }
         while (!streamReaderWrap.IsEof)
         {
             if (streamReaderWrap.CurrentCharacter == '"')
