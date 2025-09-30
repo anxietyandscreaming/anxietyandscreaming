@@ -76,7 +76,7 @@ public static class CSharpLexer
     /// V_NOTE: Interestingly I called this 'Lex_Frame'...
     /// ...It is where I'm planning now to put the "pseudo yield return logic".
     /// </summary>
-    public static SyntaxToken Lex_Frame(
+    public static SyntaxToken Lex(
         CSharpBinder binder,
         List<TextEditorTextSpan> miscTextSpanList,
         StreamReaderPooledBufferWrap streamReaderWrap,
@@ -555,8 +555,21 @@ public static class CSharpLexer
         int countDollarSign,
         bool useVerbatim)
     {
-        // I feel sad
-        return new SyntaxToken();
+        var entryPositionIndex = streamReaderWrap.PositionIndex;
+        var byteEntryIndex = streamReaderWrap.ByteIndex;
+        streamReaderWrap.ReadCharacter();
+        while (!streamReaderWrap.IsEof)
+        {
+            if (streamReaderWrap.CurrentCharacter == '"')
+            {
+                streamReaderWrap.ReadCharacter();
+                break;
+            }
+
+            streamReaderWrap.ReadCharacter();
+        }
+        var textSpan = new TextEditorTextSpan(entryPositionIndex, streamReaderWrap.PositionIndex, (byte)GenericDecorationKind.StringLiteral, byteEntryIndex);
+        return new SyntaxToken(SyntaxKind.StringLiteralToken, textSpan);
     }
     
     /// <summary>

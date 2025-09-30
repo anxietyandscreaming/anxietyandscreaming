@@ -170,12 +170,6 @@ public class TokenWalkerBuffer
         // Incase the implementation details of 'Consume' ever change just explicitly invoke it so the changes reflect here too.
         _ = Consume();
         ConsumeCounterReset();
-        
-        Console.WriteLine("\n====");
-        Console.WriteLine($"current:{Current.SyntaxKind}");
-        Console.WriteLine($"Next:{Next.SyntaxKind}");
-        Console.WriteLine($"current:{Current.SyntaxKind}");
-        Console.WriteLine("====");
     }
 
     public SyntaxToken Consume()
@@ -211,7 +205,7 @@ public class TokenWalkerBuffer
             _backtrackTuple = (_syntaxTokenBuffer[0], Index);
 
             ++_index;
-            _syntaxTokenBuffer[0] = CSharpLexer.Lex_Frame(
+            _syntaxTokenBuffer[0] = CSharpLexer.Lex(
                 _binder,
                 MiscTextSpanList,
                 StreamReaderWrap,
@@ -278,14 +272,11 @@ public class TokenWalkerBuffer
             // This 'else if' is probably wrong.
             else if (_peekIndex + offset == _peekSize)
             {
-                throw new NotImplementedException();
-                //return _streamReaderCharBuffer[0];
+                return _syntaxTokenBuffer[0];
             }
             else
             {
-                throw new NotImplementedException();
-                
-                /*if (_peekIndex == 0)
+                if (_peekIndex == 0)
                 {
                     // Note: this says '<' NOT '<=' (which is probably what people would expect)...
                     // ...I'm tired and worried so I'm just moving extremely one by one.
@@ -295,20 +286,25 @@ public class TokenWalkerBuffer
                     {
                         if (_peekSize == 1 && offset == 2)
                         {
-                            _peekBuffer[_peekSize] = (_streamReaderCharBuffer[0], PositionIndex, ByteIndex);
+                            _peekBuffer[_peekSize] = (_syntaxTokenBuffer[0], Index);
                             _peekSize++;
 
                             // This is duplicated inside the ReadCharacter() code.
 
-                            _streamPositionIndex++;
-                            _streamByteIndex += StreamReader.CurrentEncoding.GetByteCount(_streamReaderCharBuffer);
-                            StreamReader.Read(_streamReaderCharBuffer);
-                            return _streamReaderCharBuffer[0];
+                            ++_index;
+                            _syntaxTokenBuffer[0] = CSharpLexer.Lex(
+                                _binder,
+                                MiscTextSpanList,
+                                StreamReaderWrap,
+                                ref _previousEscapeCharacterTextSpan,
+                                ref _interpolatedExpressionUnmatchedBraceCount);
+                            MiscTextSpanList.Add(_syntaxTokenBuffer[0].TextSpan);
+                            return _syntaxTokenBuffer[0];
                         }
                     }
                 }
 
-                throw new NotImplementedException();*/
+                throw new NotImplementedException();
             }
         }
 
@@ -323,7 +319,7 @@ public class TokenWalkerBuffer
             // This is duplicated inside the ReadCharacter() code.
 
             ++_index;
-            _syntaxTokenBuffer[0] = CSharpLexer.Lex_Frame(
+            _syntaxTokenBuffer[0] = CSharpLexer.Lex(
                 _binder,
                 MiscTextSpanList,
                 StreamReaderWrap,
@@ -342,6 +338,9 @@ public class TokenWalkerBuffer
     /// </summary>
     public void BacktrackNoReturnValue()
     {
+        return;
+        //throw new NotImplementedException();
+    
         if (_peekIndex != -1)
         {
             // This means a Peek() was performed,
@@ -406,8 +405,6 @@ public class TokenWalkerBuffer
     {
         throw new NotImplementedException();
     }
-
-    private SyntaxToken GetBadToken() => new SyntaxToken(SyntaxKind.BadToken, new(0, 0, 0));
     
     public SyntaxToken FabricateToken(SyntaxKind syntaxKind)
     {

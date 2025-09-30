@@ -19,7 +19,12 @@ public static class CSharpParser
         Clear them inside CSharpBinder.FinalizeCompilationUnit(...) so that they aren't "dangling"
         in between Parse(...) invocations.
         */
-    
+
+        var aaa = binder.CSharpCompilerService.TryGetIntToFileAbsolutePathMap(absolutePathId);
+
+        //Console.WriteLine("\n===========");
+        //Console.WriteLine($"Parse({absolutePathId}, ...)");
+        
         compilationUnit.ScopeOffset = binder.ScopeList.Count;
         compilationUnit.NamespaceContributionOffset = binder.NamespaceContributionList.Count;
 
@@ -47,7 +52,7 @@ public static class CSharpParser
         
         while (true)
         {
-            Console.WriteLine($"while (true): {parserModel.TokenWalker.Current.SyntaxKind}");
+            //Console.WriteLine($"StatementLoop {absolutePathId}: {parserModel.TokenWalker.Current.SyntaxKind}");
             
             // Task.Delay(1_000).Wait();
         
@@ -56,7 +61,7 @@ public static class CSharpParser
 
             switch (parserModel.TokenWalker.Current.SyntaxKind)
             {
-                case SyntaxKind.NumericLiteralToken:
+                /*case SyntaxKind.NumericLiteralToken:
                 case SyntaxKind.CharLiteralToken:
                 case SyntaxKind.StringLiteralToken:
                 case SyntaxKind.StringInterpolatedStartToken:
@@ -151,12 +156,12 @@ public static class CSharpParser
                     break;
                 }
                 case SyntaxKind.EndOfFileToken:
-                    break;
+                    break;*/
                 default:
-                    if (UtilityApi.IsContextualKeywordSyntaxKind(parserModel.TokenWalker.Current.SyntaxKind))
+                    /*if (UtilityApi.IsContextualKeywordSyntaxKind(parserModel.TokenWalker.Current.SyntaxKind))
                         Parser.ParseKeywordContextualToken(ref parserModel);
                     else if (UtilityApi.IsKeywordSyntaxKind(parserModel.TokenWalker.Current.SyntaxKind))
-                        Parser.ParseKeywordToken(ref parserModel);
+                        Parser.ParseKeywordToken(ref parserModel);*/
                     break;
             }
 
@@ -213,5 +218,6 @@ public static class CSharpParser
             parserModel.CloseScope(parserModel.TokenWalker.Current.TextSpan); // The current token here would be the EOF token.
 
         parserModel.Binder.FinalizeCompilationUnit(parserModel.AbsolutePathId, compilationUnit);
+        //Console.WriteLine("===========\n");
     }
 }

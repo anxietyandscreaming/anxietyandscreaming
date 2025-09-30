@@ -4,7 +4,7 @@ public static partial class Parser
 {
     public static void HandleVarTokenContextualKeyword(ref CSharpParserState parserModel)
     {
-        Console.WriteLine("HandleVarTokenContextualKeyword");
+        Console.WriteLine(nameof(HandleVarTokenContextualKeyword));
     
         if (parserModel.StatementBuilder.StatementIsEmpty)
             Parser.ParseIdentifierToken(ref parserModel);

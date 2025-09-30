@@ -805,6 +805,8 @@ public partial class DotNetService
         }
         catch (Exception e)
         {
+            Console.WriteLine("===========\n");
+        
             if (e is OperationCanceledException)
                 progressBarModel.IsCancelled = true;
 

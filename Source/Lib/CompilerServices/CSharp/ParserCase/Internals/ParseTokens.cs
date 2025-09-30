@@ -11,6 +11,8 @@ public static partial class Parser
 {
     public static void ParseIdentifierToken(ref CSharpParserState parserModel)
     {
+        Console.WriteLine(nameof(ParseIdentifierToken));
+    
         if (parserModel.TokenWalker.Current.TextSpan.Length == 1 &&
             // 95 is ASCII code for '_'
             parserModel.TokenWalker.Current.TextSpan.CharIntSum == 95)
@@ -68,6 +70,8 @@ public static partial class Parser
         
         if (!successParse)
         {
+            Console.WriteLine("\tif (!successParse)");
+        
             expressionNode = Parser.ParseExpression(ref parserModel);
             parserModel.StatementBuilder.MostRecentNode = expressionNode;
             return;
@@ -263,30 +267,37 @@ public static partial class Parser
             return;
         }
 
-        // TODO: Global scope -1 `int aaa;`
-        var nodeValue = parserModel.Binder.NodeList[parserModel.Compilation.NodeOffset + parserModel.ScopeCurrent.NodeSubIndex];
+        var wasHandled = false;
 
-        if (parserModel.ScopeCurrent.OwnerSyntaxKind == SyntaxKind.TypeDefinitionNode &&
-            nodeValue.SyntaxKind == SyntaxKind.TypeDefinitionNode &&
-            UtilityApi.IsConvertibleToIdentifierToken(typeClauseNode.TypeIdentifierToken.SyntaxKind) &&
-            parserModel.TokenWalker.Current.SyntaxKind == SyntaxKind.OpenParenthesisToken &&
-            parserModel.Binder.CSharpCompilerService.SafeCompareTextSpans(
-                parserModel.AbsolutePathId,
-                nodeValue.IdentifierToken.TextSpan,
-                parserModel.AbsolutePathId,
-                typeClauseNode.TypeIdentifierToken.TextSpan))
+        if (parserModel.ScopeCurrent.NodeSubIndex != -1)
         {
-            // ConstructorDefinitionNode
-
-            var typeClauseToken = typeClauseNode.TypeIdentifierToken;
-            var identifierToken = UtilityApi.ConvertToIdentifierToken(ref typeClauseToken, ref parserModel);
-
-            Parser.HandleConstructorDefinition(
-                typeDefinitionIdentifierToken: nodeValue.IdentifierToken,
-                identifierToken,
-                ref parserModel);
+            var nodeValue = parserModel.Binder.NodeList[parserModel.Compilation.NodeOffset + parserModel.ScopeCurrent.NodeSubIndex];
+        
+            if (parserModel.ScopeCurrent.OwnerSyntaxKind == SyntaxKind.TypeDefinitionNode &&
+                nodeValue.SyntaxKind == SyntaxKind.TypeDefinitionNode &&
+                UtilityApi.IsConvertibleToIdentifierToken(typeClauseNode.TypeIdentifierToken.SyntaxKind) &&
+                parserModel.TokenWalker.Current.SyntaxKind == SyntaxKind.OpenParenthesisToken &&
+                parserModel.Binder.CSharpCompilerService.SafeCompareTextSpans(
+                    parserModel.AbsolutePathId,
+                    nodeValue.IdentifierToken.TextSpan,
+                    parserModel.AbsolutePathId,
+                    typeClauseNode.TypeIdentifierToken.TextSpan))
+            {
+                wasHandled = true;
+            
+                // ConstructorDefinitionNode
+    
+                var typeClauseToken = typeClauseNode.TypeIdentifierToken;
+                var identifierToken = UtilityApi.ConvertToIdentifierToken(ref typeClauseToken, ref parserModel);
+    
+                Parser.HandleConstructorDefinition(
+                    typeDefinitionIdentifierToken: nodeValue.IdentifierToken,
+                    identifierToken,
+                    ref parserModel);
+            }
         }
-        else
+        
+        if (!wasHandled)
         {
             parserModel.StatementBuilder.MostRecentNode = typeClauseNode;
         }
