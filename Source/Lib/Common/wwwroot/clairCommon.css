@@ -735,12 +735,12 @@ button.ci_dynamic-tab.ci_drag.ci_active {
     --ci_resize-row-background-color: #d7d7d7;
     /* 'i' stands for 'icon' */
     --ci_i-solution-color: #a074c4;
-    --ci_i-dot-net-solution-folder-color: #5c7feb;
+    --ci_i-dotnetslnfolder-color: #5c7feb;
     --ci_i-project-color: #88d184;
     --ci_i-razor-color: #c586c0;
-    --ci_i-folder-color: #d7ab69;
+    --ci_i-dir-color: #d7ab69;
     --ci_i-json-color: #cbc638;
-    --ci_i-c-sharp-class-color: #519aba;
+    --ci_i-cs-color: #519aba;
     --ci_i-cshtml-color: #c586c0;
     --ci_i-css-color: #e36a6e;
     --ci_i-js-color: #519aba;
@@ -819,12 +819,12 @@ button.ci_dynamic-tab.ci_drag.ci_active {
     --ci_resize-row-background-color: black;
     /* 'i' stands for 'icon' */
     --ci_i-solution-color: #8f38d6;
-    --ci_i-dot-net-solution-folder-color: #252ff1;
+    --ci_i-dotnetslnfolder-color: #252ff1;
     --ci_i-project-color: rgb(0, 150, 0);
     --ci_i-razor-color: #c509db;
-    --ci_i-folder-color: #a46d00;
+    --ci_i-dir-color: #a46d00;
     --ci_i-json-color: #beb106;
-    --ci_i-c-sharp-class-color: #2B91AF;
+    --ci_i-cs-color: #2B91AF;
     --ci_i-cshtml-color: #c509db;
     --ci_i-css-color: #de4b50;
     --ci_i-js-color: #519aba;
