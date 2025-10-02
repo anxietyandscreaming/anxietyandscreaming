@@ -92,11 +92,15 @@
                 else
                 {
                     <span>
+                        @* Keep the span otherwise icon disappears if treeview width is too small *@
                         @IconRenderer.Render(IconKind.Blank, appOptionsState.Options.IconSizeInPixels, appOptionsState.Options.IconSizeInPixels)
                     </span>
                 }
 
-                @IconRenderer.Render(node.IconKind, appOptionsState.Options.IconSizeInPixels, appOptionsState.Options.IconSizeInPixels)
+                <span>
+                    @* Keep the span otherwise icon disappears if treeview width is too small *@
+                    @IconRenderer.Render(node.IconKind, appOptionsState.Options.IconSizeInPixels, appOptionsState.Options.IconSizeInPixels)
+                </span>
 
                 <div class="@node.GetDisplayTextCssClass()" title="@node.GetHoverText()">
                     @node.GetDisplayText()
