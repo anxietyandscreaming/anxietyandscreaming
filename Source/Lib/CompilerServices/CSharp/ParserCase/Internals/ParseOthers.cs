@@ -26,6 +26,8 @@ public static partial class Parser
             if (count % 2 == 0)
             {
                 var matchedToken = parserModel.TokenWalker.Match(SyntaxKind.IdentifierToken);
+                if (matchedToken.IsFabricated)
+                    break;
                 count++;
                 
                 if (textSpan == default)
@@ -69,8 +71,8 @@ public static partial class Parser
                     }
                 }*/
 
-                if (parserModel.TokenWalker.Next.SyntaxKind != SyntaxKind.StatementDelimiterToken)
-                {
+                //if (parserModel.TokenWalker.Next.SyntaxKind != SyntaxKind.StatementDelimiterToken)
+                //{
                     if (parserModel.Compilation.CompilationUnitKind == CompilationUnitKind.IndividualFile_AllData)
                     {
                         parserModel.Binder.SymbolList.Insert(
@@ -86,10 +88,10 @@ public static partial class Parser
                     {
                         parserModel.AddNamespaceToCurrentScope(textSpan);
                     }
-                }
+                //}
                 
-                if (matchedToken.IsFabricated)
-                    break;
+                /*if (matchedToken.IsFabricated)
+                    break;*/
             }
             else
             {

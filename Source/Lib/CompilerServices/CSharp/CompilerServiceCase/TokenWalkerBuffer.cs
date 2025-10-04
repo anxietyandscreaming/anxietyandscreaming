@@ -418,7 +418,7 @@ public class TokenWalkerBuffer
     
     public SyntaxToken FabricateToken(SyntaxKind syntaxKind)
     {
-        var currentTextSpan = Peek(0).TextSpan;
+        var currentTextSpan = Current.TextSpan;
 
         switch (syntaxKind)
         {
