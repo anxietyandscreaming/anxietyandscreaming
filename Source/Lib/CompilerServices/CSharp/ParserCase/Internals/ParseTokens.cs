@@ -11,8 +11,6 @@ public static partial class Parser
 {
     public static void ParseIdentifierToken(ref CSharpParserState parserModel)
     {
-        Console.WriteLine(nameof(ParseIdentifierToken));
-    
         if (parserModel.TokenWalker.Current.TextSpan.Length == 1 &&
             // 95 is ASCII code for '_'
             parserModel.TokenWalker.Current.TextSpan.CharIntSum == 95)
@@ -70,8 +68,6 @@ public static partial class Parser
         
         if (!successParse)
         {
-            Console.WriteLine("\tif (!successParse)");
-        
             expressionNode = Parser.ParseExpression(ref parserModel);
             parserModel.StatementBuilder.MostRecentNode = expressionNode;
             return;

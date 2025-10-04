@@ -50,8 +50,8 @@ public class TokenWalkerBuffer
     /// But I'm adding it here cause I'm tired and don't want to end up in a possible rabbit hole over this right now.
     /// </summary>
     private (SyntaxToken SyntaxToken, int PositionIndex)[] _peekBuffer = new (SyntaxToken SyntaxToken, int PositionIndex)[3]; // largest Peek is 2
-    private int _peekIndex = -1;
-    private int _peekSize = 0;
+    public int _peekIndex = -1;
+    public int _peekSize = 0;
 
     private (SyntaxToken SyntaxToken, int PositionIndex) _backtrackTuple;
 
@@ -186,6 +186,15 @@ public class TokenWalkerBuffer
             {
                 _peekIndex = -1;
                 _peekSize = 0;
+
+                /*++_index;
+                _syntaxTokenBuffer[0] = CSharpLexer.Lex(
+                    _binder,
+                    MiscTextSpanList,
+                    StreamReaderWrap,
+                    ref _previousEscapeCharacterTextSpan,
+                    ref _interpolatedExpressionUnmatchedBraceCount);
+                MiscTextSpanList.Add(_syntaxTokenBuffer[0].TextSpan);*/
             }
         }
         else
@@ -212,6 +221,8 @@ public class TokenWalkerBuffer
                 ref _previousEscapeCharacterTextSpan,
                 ref _interpolatedExpressionUnmatchedBraceCount);
             MiscTextSpanList.Add(_syntaxTokenBuffer[0].TextSpan);
+            
+            
         }
 
         return consumedToken;
@@ -345,7 +356,7 @@ public class TokenWalkerBuffer
         {
             // This means a Peek() was performed,
             // then before the PeekBuffer was fully traversed
-            // another peek occurred.
+            // a backtrack occurred.
             //
             // I'm hoping that this case just doesn't occur in the Lexer at the moment
             // because I'm quite tired.
@@ -408,7 +419,7 @@ public class TokenWalkerBuffer
     
     public SyntaxToken FabricateToken(SyntaxKind syntaxKind)
     {
-        var currentTextSpan = Peek(0).TextSpan;
+        var currentTextSpan = Current.TextSpan;
 
         switch (syntaxKind)
         {

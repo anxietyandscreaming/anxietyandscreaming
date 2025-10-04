@@ -2015,9 +2015,9 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
             using (MemoryStream memoryStream = new MemoryStream(byteArray))
             {
                 // Create a StreamReader from the MemoryStream
-                using (StreamReaderPooledBuffer reader = new StreamReaderPooledBuffer(memoryStream, Encoding.UTF8, byteBuffer, charBuffer))
+                using (StreamReaderPooledBuffer lexer_reader = new StreamReaderPooledBuffer(memoryStream, Encoding.UTF8, byteBuffer, charBuffer))
                 {
-                    _streamReaderWrap.ReInitialize(reader);
+                    _streamReaderWrap.ReInitialize(lexer_reader);
                     
                     TextEditorService.LEXER_miscTextSpanList.Clear();
                     _tokenWalkerBuffer.ReInitialize(
@@ -2096,27 +2096,34 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
     
         var cSharpCompilationUnit = new CSharpCompilationUnit(compilationUnitKind);
 
-        var byteBuffer = Rent_ByteBuffer();
-        var charBuffer = Rent_CharBuffer();
-        using (StreamReaderPooledBuffer sr = new StreamReaderPooledBuffer(resourceUri.Value, _safeOnlyUTF8Encoding, byteBuffer, charBuffer))
+        var lexer_byteBuffer = Rent_ByteBuffer();
+        var lexer_charBuffer = Rent_CharBuffer();
+        var parser_byteBuffer = Rent_ByteBuffer();
+        var parser_charBuffer = Rent_CharBuffer();
+        using (StreamReaderPooledBuffer lexer_sr = new StreamReaderPooledBuffer(resourceUri.Value, _safeOnlyUTF8Encoding, lexer_byteBuffer, lexer_charBuffer))
         {
-            _streamReaderWrap.ReInitialize(sr);
-                    
-            TextEditorService.LEXER_miscTextSpanList.Clear();
-            _tokenWalkerBuffer.ReInitialize(
-                __CSharpBinder,
-                resourceUri,
-                TextEditorService.LEXER_miscTextSpanList,
-                _tokenWalkerBuffer,
-                _streamReaderWrap,
-                shouldUseSharedStringWalker: true);
-            
-            FastParseTuple = (absolutePathId, sr);
-            __CSharpBinder.StartCompilationUnit(absolutePathId);
-            CSharpParser.Parse(absolutePathId, _tokenWalkerBuffer, ref cSharpCompilationUnit, __CSharpBinder);
+            using (StreamReaderPooledBuffer parser_sr = new StreamReaderPooledBuffer(resourceUri.Value, _safeOnlyUTF8Encoding, parser_byteBuffer, parser_charBuffer))
+            {
+                _streamReaderWrap.ReInitialize(lexer_sr);
+                        
+                TextEditorService.LEXER_miscTextSpanList.Clear();
+                _tokenWalkerBuffer.ReInitialize(
+                    __CSharpBinder,
+                    resourceUri,
+                    TextEditorService.LEXER_miscTextSpanList,
+                    _tokenWalkerBuffer,
+                    _streamReaderWrap,
+                    shouldUseSharedStringWalker: true);
+                
+                FastParseTuple = (absolutePathId, parser_sr);
+                __CSharpBinder.StartCompilationUnit(absolutePathId);
+                CSharpParser.Parse(absolutePathId, _tokenWalkerBuffer, ref cSharpCompilationUnit, __CSharpBinder);
+            }
         }
-        Return_ByteBuffer(byteBuffer);
-        Return_CharBuffer(charBuffer);
+        Return_ByteBuffer(lexer_byteBuffer);
+        Return_CharBuffer(lexer_charBuffer);
+        Return_ByteBuffer(parser_byteBuffer);
+        Return_CharBuffer(parser_charBuffer);
 
         FastParseTuple = (0, null);
     }
