@@ -349,6 +349,7 @@ public class TokenWalkerBuffer
     /// </summary>
     public void BacktrackNoReturnValue()
     {
+        return;
         //throw new NotImplementedException();
     
         if (_peekIndex != -1)
