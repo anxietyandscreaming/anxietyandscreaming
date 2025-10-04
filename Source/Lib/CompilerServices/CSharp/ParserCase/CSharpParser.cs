@@ -19,9 +19,6 @@ public static class CSharpParser
         Clear them inside CSharpBinder.FinalizeCompilationUnit(...) so that they aren't "dangling"
         in between Parse(...) invocations.
         */
-
-        //Console.WriteLine("\n===========");
-        //Console.WriteLine($"Parse({absolutePathId}, ...)");
         
         compilationUnit.ScopeOffset = binder.ScopeList.Count;
         compilationUnit.NamespaceContributionOffset = binder.NamespaceContributionList.Count;
@@ -50,10 +47,6 @@ public static class CSharpParser
         
         while (true)
         {
-            //Console.WriteLine($"StatementLoop {absolutePathId}: {parserModel.TokenWalker.Current.SyntaxKind}");
-            
-            // Task.Delay(1_000).Wait();
-        
             // The last statement in this while loop is conditionally: '_ = parserModel.TokenWalker.Consume();'.
             // Knowing this to be the case is extremely important.
 
@@ -69,17 +62,17 @@ public static class CSharpParser
                 case SyntaxKind.StarToken:
                 case SyntaxKind.DollarSignToken:
                 case SyntaxKind.AtToken:
-                    /*if (parserModel.StatementBuilder.StatementIsEmpty)
+                    if (parserModel.StatementBuilder.StatementIsEmpty)
                     {
                         _ = Parser.ParseExpression(ref parserModel);
                     }
                     else
                     {
                         parserModel.StatementBuilder.MostRecentNode = Parser.ParseExpression(ref parserModel);
-                    }*/
+                    }
                     break;
                 case SyntaxKind.IdentifierToken:
-                    /*Parser.ParseIdentifierToken(ref parserModel);*/
+                    Parser.ParseIdentifierToken(ref parserModel);
                     break;
                 case SyntaxKind.OpenBraceToken:
                 {
@@ -106,26 +99,26 @@ public static class CSharpParser
                     // in order to get the CloseBraceToken.
                     var closeBraceTokenIndex = parserModel.TokenWalker.Index;
                     
-                    /*if (parserModel.ParseChildScopeStack.Count > 0 &&
+                    if (parserModel.ParseChildScopeStack.Count > 0 &&
                         parserModel.ParseChildScopeStack.Peek().ScopeSubIndex == parserModel.ScopeCurrentSubIndex)
                     {
                         parserModel.TokenWalker.SetNullDeferredParsingTuple();
-                    }*/
+                    }
                     
                     Parser.ParseCloseBraceToken(closeBraceTokenIndex, ref parserModel);
                     break;
                 }
                 case SyntaxKind.OpenParenthesisToken:
-                    /*Parser.ParseOpenParenthesisToken(ref parserModel);*/
+                    Parser.ParseOpenParenthesisToken(ref parserModel);
                     break;
                 case SyntaxKind.OpenSquareBracketToken:
-                    /*Parser.ParseOpenSquareBracketToken(ref parserModel);*/
+                    Parser.ParseOpenSquareBracketToken(ref parserModel);
                     break;
                 case SyntaxKind.OpenAngleBracketToken:
-                    /*if (parserModel.StatementBuilder.StatementIsEmpty)
+                    if (parserModel.StatementBuilder.StatementIsEmpty)
                         _ = Parser.ParseExpression(ref parserModel);
                     else
-                        _ = parserModel.TokenWalker.Consume();*/
+                        _ = parserModel.TokenWalker.Consume();
                     break;
                 case SyntaxKind.PreprocessorDirectiveToken:
                 case SyntaxKind.CloseParenthesisToken:
@@ -133,15 +126,15 @@ public static class CSharpParser
                 case SyntaxKind.CloseSquareBracketToken:
                 case SyntaxKind.ColonToken:
                 case SyntaxKind.MemberAccessToken:
-                    /*_ = parserModel.TokenWalker.Consume();
-                    break;*/
+                    _ = parserModel.TokenWalker.Consume();
+                    break;
                 case SyntaxKind.EqualsToken:
-                    /*Parser.ParseEqualsToken(ref parserModel);*/
+                    Parser.ParseEqualsToken(ref parserModel);
                     break;
                 case SyntaxKind.EqualsCloseAngleBracketToken:
                 {
-                    /*_ = parserModel.TokenWalker.Consume(); // Consume 'EqualsCloseAngleBracketToken'
-                    parserModel.Return_Helper(Parser.ParseExpression(ref parserModel));*/
+                    _ = parserModel.TokenWalker.Consume(); // Consume 'EqualsCloseAngleBracketToken'
+                    parserModel.Return_Helper(Parser.ParseExpression(ref parserModel));
                     break;
                 }
                 case SyntaxKind.StatementDelimiterToken:
@@ -156,17 +149,15 @@ public static class CSharpParser
                 case SyntaxKind.EndOfFileToken:
                     break;
                 default:
-                    /*if (UtilityApi.IsContextualKeywordSyntaxKind(parserModel.TokenWalker.Current.SyntaxKind))
+                    if (UtilityApi.IsContextualKeywordSyntaxKind(parserModel.TokenWalker.Current.SyntaxKind))
                         Parser.ParseKeywordContextualToken(ref parserModel);
                     else if (UtilityApi.IsKeywordSyntaxKind(parserModel.TokenWalker.Current.SyntaxKind))
-                        Parser.ParseKeywordToken(ref parserModel);*/
+                        Parser.ParseKeywordToken(ref parserModel);
                     break;
             }
 
             if (parserModel.TokenWalker.Current.SyntaxKind == SyntaxKind.EndOfFileToken)
             {
-                // Console.WriteLine("if (parserModel.TokenWalker.Current.SyntaxKind == SyntaxKind.EndOfFileToken)");
-            
                 bool deferredParsingOccurred = false;
                 
                 if (parserModel.ParseChildScopeStack.Count > 0)
@@ -216,6 +207,5 @@ public static class CSharpParser
             parserModel.CloseScope(parserModel.TokenWalker.Current.TextSpan); // The current token here would be the EOF token.
 
         parserModel.Binder.FinalizeCompilationUnit(parserModel.AbsolutePathId, compilationUnit);
-        //Console.WriteLine("===========\n");
     }
 }
