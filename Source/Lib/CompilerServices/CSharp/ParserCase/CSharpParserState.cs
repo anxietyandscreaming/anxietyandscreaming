@@ -205,7 +205,7 @@ public ref partial struct CSharpParserState
             functionDefinitionNode.FunctionIdentifierToken.TextSpan.ByteIndex));
         ++Compilation.SymbolLength;
 
-        Binder.CSharpCompilerService.TextEditorService.LEXER_miscTextSpanList.Add(functionDefinitionNode.FunctionIdentifierToken.TextSpan with
+        TokenWalker.MiscTextSpanListAdd(functionDefinitionNode.FunctionIdentifierToken.TextSpan with
         {
             DecorationByte = (byte)GenericDecorationKind.Function
         });
@@ -368,7 +368,7 @@ public ref partial struct CSharpParserState
                 identifierToken.TextSpan.ByteIndex));
         ++Compilation.SymbolLength;
 
-        Binder.CSharpCompilerService.TextEditorService.LEXER_miscTextSpanList.Add(identifierToken.TextSpan with
+        TokenWalker.MiscTextSpanListAdd(identifierToken.TextSpan with
         {
             DecorationByte = (byte)GenericDecorationKind.Type
         });
@@ -386,7 +386,7 @@ public ref partial struct CSharpParserState
                 functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan.ByteIndex));
         ++Compilation.SymbolLength;
 
-        Binder.CSharpCompilerService.TextEditorService.LEXER_miscTextSpanList.Add(functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan with
+        TokenWalker.MiscTextSpanListAdd(functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan with
         {
             DecorationByte = (byte)GenericDecorationKind.Function
         });
@@ -431,7 +431,7 @@ public ref partial struct CSharpParserState
                     typeClauseNode.TypeIdentifierToken.TextSpan.ByteIndex));
             ++Compilation.SymbolLength;
 
-            Binder.CSharpCompilerService.TextEditorService.LEXER_miscTextSpanList.Add(typeClauseNode.TypeIdentifierToken.TextSpan with
+            TokenWalker.MiscTextSpanListAdd(typeClauseNode.TypeIdentifierToken.TextSpan with
             {
                 DecorationByte = (byte)GenericDecorationKind.Type
             });
@@ -452,7 +452,7 @@ public ref partial struct CSharpParserState
                     identifierToken.TextSpan.ByteIndex));
             ++Compilation.SymbolLength;
 
-            Binder.CSharpCompilerService.TextEditorService.LEXER_miscTextSpanList.Add(identifierToken.TextSpan with
+            TokenWalker.MiscTextSpanListAdd(identifierToken.TextSpan with
             {
                 DecorationByte = (byte)GenericDecorationKind.Type
             });
@@ -675,7 +675,7 @@ public ref partial struct CSharpParserState
                         identifierToken.TextSpan.ByteIndex));
                 ++Compilation.SymbolLength;
 
-                Binder.TextEditorService.LEXER_miscTextSpanList.Add(identifierToken.TextSpan with
+                TokenWalker.MiscTextSpanListAdd(identifierToken.TextSpan with
                 {
                     DecorationByte = (byte)GenericDecorationKind.Field
                 });
@@ -692,7 +692,7 @@ public ref partial struct CSharpParserState
                 ++Compilation.SymbolLength;
 
 
-                Binder.TextEditorService.LEXER_miscTextSpanList.Add(identifierToken.TextSpan with
+                TokenWalker.MiscTextSpanListAdd(identifierToken.TextSpan with
                 {
                     DecorationByte = (byte)GenericDecorationKind.Property
                 });
@@ -708,7 +708,7 @@ public ref partial struct CSharpParserState
                         identifierToken.TextSpan.ByteIndex));
                 ++Compilation.SymbolLength;
 
-                Binder.TextEditorService.LEXER_miscTextSpanList.Add(identifierToken.TextSpan with
+                TokenWalker.MiscTextSpanListAdd(identifierToken.TextSpan with
                 {
                     DecorationByte = (byte)GenericDecorationKind.Property
                 });
@@ -728,7 +728,7 @@ public ref partial struct CSharpParserState
                         identifierToken.TextSpan.ByteIndex));
                 ++Compilation.SymbolLength;
 
-                Binder.TextEditorService.LEXER_miscTextSpanList.Add(identifierToken.TextSpan with
+                TokenWalker.MiscTextSpanListAdd(identifierToken.TextSpan with
                 {
                     DecorationByte = (byte)GenericDecorationKind.Variable
                 });

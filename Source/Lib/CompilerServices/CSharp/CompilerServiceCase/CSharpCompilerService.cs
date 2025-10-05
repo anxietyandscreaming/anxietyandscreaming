@@ -2017,13 +2017,19 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
                 // Create a StreamReader from the MemoryStream
                 using (StreamReaderPooledBuffer lexer_reader = new StreamReaderPooledBuffer(memoryStream, Encoding.UTF8, byteBuffer, charBuffer))
                 {
+                    if (shouldApplySyntaxHighlighting)
+                    {
+                        editContext.TextEditorService.Model_BeginStreamSyntaxHighlighting(
+                            editContext,
+                            modelModifier);
+                    }
+
                     _streamReaderWrap.ReInitialize(lexer_reader);
                     
-                    TextEditorService.LEXER_miscTextSpanList.Clear();
                     _tokenWalkerBuffer.ReInitialize(
                         __CSharpBinder,
                         resourceUri,
-                        TextEditorService.LEXER_miscTextSpanList,
+                        modelModifier,
                         _tokenWalkerBuffer,
                         _streamReaderWrap,
                         shouldUseSharedStringWalker: true);
@@ -2053,20 +2059,9 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
             
             if (shouldApplySyntaxHighlighting)
             {
-                /*
-                // 2025-05-10
-                TextEditorService.LEXER_miscTextSpanList.AddRange(
-                    __CSharpBinder.SymbolList.Skip(cSharpCompilationUnit.SymbolOffset).Take(cSharpCompilationUnit.SymbolLength).Select(x => x.ToTextSpan()));
-                */    
-
-                editContext.TextEditorService.Model_ApplySyntaxHighlighting(
+                editContext.TextEditorService.Model_FinalizeStreamSyntaxHighlighting(
                     editContext,
-                    modelModifier,
-                    TextEditorService.LEXER_miscTextSpanList);
-
-                    /*lexerOutput.SyntaxTokenList.Select(x => x.TextSpan)
-                        .Concat(lexerOutput.MiscTextSpanList)
-                        .Concat(__CSharpBinder.SymbolList.Skip(cSharpCompilationUnit.SymbolOffset).Take(cSharpCompilationUnit.SymbolLength).Select(x => x.TextSpan)));*/
+                    modelModifier);
             }
 
             _currentFileBeingParsedTuple = (absolutePathId, null);
@@ -2108,12 +2103,11 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
             using (StreamReaderPooledBuffer parser_sr = new StreamReaderPooledBuffer(resourceUri.Value, _safeOnlyUTF8Encoding, parser_byteBuffer, parser_charBuffer))
             {
                 _streamReaderWrap.ReInitialize(lexer_sr);
-                        
-                TextEditorService.LEXER_miscTextSpanList.Clear();
+
                 _tokenWalkerBuffer.ReInitialize(
                     __CSharpBinder,
                     resourceUri,
-                    TextEditorService.LEXER_miscTextSpanList,
+                    textEditorModel: null,
                     _tokenWalkerBuffer,
                     _streamReaderWrap,
                     shouldUseSharedStringWalker: true);

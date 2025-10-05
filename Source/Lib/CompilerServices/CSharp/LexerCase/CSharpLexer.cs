@@ -78,7 +78,7 @@ public static class CSharpLexer
     /// </summary>
     public static SyntaxToken Lex(
         CSharpBinder binder,
-        List<TextEditorTextSpan> miscTextSpanList,
+        TokenWalkerBuffer tokenWalkerBuffer,
         StreamReaderPooledBufferWrap streamReaderWrap,
         ref TextEditorTextSpan previousEscapeCharacterTextSpan,
         ref int interpolatedExpressionUnmatchedBraceCount)
@@ -143,7 +143,7 @@ public static class CSharpLexer
                 case 'Z':
                 /* Underscore */
                 case '_':
-                    return LexIdentifierOrKeywordOrKeywordContextual(binder, miscTextSpanList, streamReaderWrap);
+                    return LexIdentifierOrKeywordOrKeywordContextual(binder, tokenWalkerBuffer, streamReaderWrap);
                 case '0':
                 case '1':
                 case '2':
@@ -154,20 +154,20 @@ public static class CSharpLexer
                 case '7':
                 case '8':
                 case '9':
-                    return LexNumericLiteralToken(binder, miscTextSpanList, streamReaderWrap);
+                    return LexNumericLiteralToken(binder, tokenWalkerBuffer, streamReaderWrap);
                 case '\'':
-                    return LexCharLiteralToken(binder, miscTextSpanList, streamReaderWrap);
+                    return LexCharLiteralToken(binder, tokenWalkerBuffer, streamReaderWrap);
                 case '"':
-                    return LexString(binder, miscTextSpanList, streamReaderWrap, ref previousEscapeCharacterTextSpan, countDollarSign: 0, useVerbatim: false);
+                    return LexString(binder, tokenWalkerBuffer, streamReaderWrap, ref previousEscapeCharacterTextSpan, countDollarSign: 0, useVerbatim: false);
                 case '/':
                     if (streamReaderWrap.PeekCharacter(1) == '/')
                     {
-                        LexCommentSingleLineToken(miscTextSpanList, streamReaderWrap);
+                        LexCommentSingleLineToken(tokenWalkerBuffer, streamReaderWrap);
                         break;
                     }
                     else if (streamReaderWrap.PeekCharacter(1) == '*')
                     {
-                        LexCommentMultiLineToken(miscTextSpanList, streamReaderWrap);
+                        LexCommentMultiLineToken(tokenWalkerBuffer, streamReaderWrap);
                         break;
                     }
                     else
@@ -436,11 +436,11 @@ public static class CSharpLexer
                 case '$':
                     if (streamReaderWrap.NextCharacter == '"')
                     {
-                        return LexString(binder, miscTextSpanList, streamReaderWrap, ref previousEscapeCharacterTextSpan, countDollarSign: 1, useVerbatim: false);
+                        return LexString(binder, tokenWalkerBuffer, streamReaderWrap, ref previousEscapeCharacterTextSpan, countDollarSign: 1, useVerbatim: false);
                     }
                     else if (streamReaderWrap.PeekCharacter(1) == '@' && streamReaderWrap.PeekCharacter(2) == '"')
                     {
-                        return LexString(binder, miscTextSpanList, streamReaderWrap, ref previousEscapeCharacterTextSpan, countDollarSign: 1, useVerbatim: true);
+                        return LexString(binder, tokenWalkerBuffer, streamReaderWrap, ref previousEscapeCharacterTextSpan, countDollarSign: 1, useVerbatim: true);
                     }
                     else if (streamReaderWrap.NextCharacter == '$')
                     {
@@ -470,7 +470,7 @@ public static class CSharpLexer
                         streamReaderWrap.BacktrackCharacterNoReturnValue();
                         
                         if (streamReaderWrap.NextCharacter == '"')
-                            return LexString(binder, miscTextSpanList, streamReaderWrap, ref previousEscapeCharacterTextSpan, countDollarSign: countDollarSign, useVerbatim: false);
+                            return LexString(binder, tokenWalkerBuffer, streamReaderWrap, ref previousEscapeCharacterTextSpan, countDollarSign: countDollarSign, useVerbatim: false);
                         else
                             return token;
                     }
@@ -485,11 +485,11 @@ public static class CSharpLexer
                 case '@':
                     if (streamReaderWrap.NextCharacter == '"')
                     {
-                        return LexString(binder, miscTextSpanList, streamReaderWrap, ref previousEscapeCharacterTextSpan, countDollarSign: 0, useVerbatim: true);
+                        return LexString(binder, tokenWalkerBuffer, streamReaderWrap, ref previousEscapeCharacterTextSpan, countDollarSign: 0, useVerbatim: true);
                     }
                     else if (streamReaderWrap.PeekCharacter(1) == '$' && streamReaderWrap.PeekCharacter(2) == '"')
                     {
-                        return LexString(binder, miscTextSpanList, streamReaderWrap, ref previousEscapeCharacterTextSpan, countDollarSign: 1, useVerbatim: true);
+                        return LexString(binder, tokenWalkerBuffer, streamReaderWrap, ref previousEscapeCharacterTextSpan, countDollarSign: 1, useVerbatim: true);
                     }
                     else
                     {
@@ -524,7 +524,7 @@ public static class CSharpLexer
                     return new SyntaxToken(SyntaxKind.CommaToken, textSpan);
                 }
                 case '#':
-                    return LexPreprocessorDirectiveToken(miscTextSpanList, streamReaderWrap);
+                    return LexPreprocessorDirectiveToken(tokenWalkerBuffer, streamReaderWrap);
                 default:
                     _ = streamReaderWrap.ReadCharacter();
                     break;
@@ -549,7 +549,7 @@ public static class CSharpLexer
     /// </summary>
     private static SyntaxToken LexString(
         CSharpBinder binder,
-        List<TextEditorTextSpan> miscTextSpanList,
+        TokenWalkerBuffer tokenWalkerBuffer,
         StreamReaderPooledBufferWrap streamReaderWrap,
         ref TextEditorTextSpan previousEscapeCharacterTextSpan,
         int countDollarSign,
@@ -594,7 +594,7 @@ public static class CSharpLexer
     /// </summary>
     private static void LexInterpolatedExpression(
         CSharpBinder binder,
-        List<TextEditorTextSpan> miscTextSpanList,
+        TokenWalkerBuffer tokenWalkerBuffer,
         StreamReaderPooledBufferWrap streamReaderWrap,
         ref TextEditorTextSpan previousEscapeCharacterTextSpan,
         int startInclusiveOpenDelimiter,
@@ -604,25 +604,22 @@ public static class CSharpLexer
     }
     
     private static void EscapeCharacterListAdd(
-        List<TextEditorTextSpan> miscTextSpanList, StreamReaderPooledBufferWrap streamReaderWrap, ref TextEditorTextSpan previousEscapeCharacterTextSpan, TextEditorTextSpan textSpan)
+        TokenWalkerBuffer tokenWalkerBuffer, StreamReaderPooledBufferWrap streamReaderWrap, ref TextEditorTextSpan previousEscapeCharacterTextSpan, TextEditorTextSpan textSpan)
     {
-        if (miscTextSpanList.Count > 0)
+        if (previousEscapeCharacterTextSpan.EndExclusiveIndex == textSpan.StartInclusiveIndex &&
+            previousEscapeCharacterTextSpan.DecorationByte == (byte)GenericDecorationKind.EscapeCharacterPrimary)
         {
-            if (previousEscapeCharacterTextSpan.EndExclusiveIndex == textSpan.StartInclusiveIndex &&
-                previousEscapeCharacterTextSpan.DecorationByte == (byte)GenericDecorationKind.EscapeCharacterPrimary)
+            textSpan = textSpan with
             {
-                textSpan = textSpan with
-                {
-                    DecorationByte = (byte)GenericDecorationKind.EscapeCharacterSecondary,
-                };
-            }
+                DecorationByte = (byte)GenericDecorationKind.EscapeCharacterSecondary,
+            };
         }
         
         previousEscapeCharacterTextSpan = textSpan;
-        miscTextSpanList.Add(textSpan);
+        tokenWalkerBuffer.MiscTextSpanListAdd(textSpan);
     }
     
-    public static SyntaxToken LexIdentifierOrKeywordOrKeywordContextual(CSharpBinder binder, List<TextEditorTextSpan> miscTextSpanList, StreamReaderPooledBufferWrap streamReaderWrap)
+    public static SyntaxToken LexIdentifierOrKeywordOrKeywordContextual(CSharpBinder binder, TokenWalkerBuffer tokenWalkerBuffer, StreamReaderPooledBufferWrap streamReaderWrap)
     {
         // To detect whether a word is an identifier or a keyword:
         // -------------------------------------------------------
@@ -2169,7 +2166,7 @@ public static class CSharpLexer
         }
     }
     
-    public static SyntaxToken LexNumericLiteralToken(CSharpBinder binder, List<TextEditorTextSpan> miscTextSpanList, StreamReaderPooledBufferWrap streamReaderWrap)
+    public static SyntaxToken LexNumericLiteralToken(CSharpBinder binder, TokenWalkerBuffer tokenWalkerBuffer, StreamReaderPooledBufferWrap streamReaderWrap)
     {
         var entryPositionIndex = streamReaderWrap.PositionIndex;
         var byteEntryIndex = streamReaderWrap.ByteIndex;
@@ -2212,7 +2209,7 @@ public static class CSharpLexer
         return new SyntaxToken(SyntaxKind.NumericLiteralToken, textSpan);
     }
     
-    public static SyntaxToken LexCharLiteralToken(CSharpBinder binder, List<TextEditorTextSpan> miscTextSpanList, StreamReaderPooledBufferWrap streamReaderWrap)
+    public static SyntaxToken LexCharLiteralToken(CSharpBinder binder, TokenWalkerBuffer tokenWalkerBuffer, StreamReaderPooledBufferWrap streamReaderWrap)
     {
         var delimiter = '\'';
         var escapeCharacter = '\\';
@@ -2232,7 +2229,7 @@ public static class CSharpLexer
             }
             else if (streamReaderWrap.CurrentCharacter == escapeCharacter)
             {
-                miscTextSpanList.Add(new TextEditorTextSpan(
+                tokenWalkerBuffer.MiscTextSpanListAdd(new TextEditorTextSpan(
                     streamReaderWrap.PositionIndex,
                     streamReaderWrap.PositionIndex + 2,
                     (byte)GenericDecorationKind.EscapeCharacterPrimary,
@@ -2255,7 +2252,7 @@ public static class CSharpLexer
         return new SyntaxToken(SyntaxKind.CharLiteralToken, textSpan);
     }
     
-    public static void LexCommentSingleLineToken(List<TextEditorTextSpan> miscTextSpanList, StreamReaderPooledBufferWrap streamReaderWrap)
+    public static void LexCommentSingleLineToken(TokenWalkerBuffer tokenWalkerBuffer, StreamReaderPooledBufferWrap streamReaderWrap)
     {
         var entryPositionIndex = streamReaderWrap.PositionIndex;
         var byteEntryIndex = streamReaderWrap.ByteIndex;
@@ -2287,10 +2284,10 @@ public static class CSharpLexer
             (byte)GenericDecorationKind.CommentSingleLine,
             byteEntryIndex);
 
-        miscTextSpanList.Add(textSpan);
+        tokenWalkerBuffer.MiscTextSpanListAdd(textSpan);
     }
     
-    public static void LexCommentMultiLineToken(List<TextEditorTextSpan> miscTextSpanList, StreamReaderPooledBufferWrap streamReaderWrap)
+    public static void LexCommentMultiLineToken(TokenWalkerBuffer tokenWalkerBuffer, StreamReaderPooledBufferWrap streamReaderWrap)
     {
         var entryPositionIndex = streamReaderWrap.PositionIndex;
         var byteEntryIndex = streamReaderWrap.ByteIndex;
@@ -2329,10 +2326,10 @@ public static class CSharpLexer
             (byte)GenericDecorationKind.CommentMultiLine,
             byteEntryIndex);
 
-        miscTextSpanList.Add(textSpan);
+        tokenWalkerBuffer.MiscTextSpanListAdd(textSpan);
     }
     
-    public static SyntaxToken LexPreprocessorDirectiveToken(List<TextEditorTextSpan> miscTextSpanList, StreamReaderPooledBufferWrap streamReaderWrap)
+    public static SyntaxToken LexPreprocessorDirectiveToken(TokenWalkerBuffer tokenWalkerBuffer, StreamReaderPooledBufferWrap streamReaderWrap)
     {
         var entryPositionIndex = streamReaderWrap.PositionIndex;
         var byteEntryIndex = streamReaderWrap.ByteIndex;

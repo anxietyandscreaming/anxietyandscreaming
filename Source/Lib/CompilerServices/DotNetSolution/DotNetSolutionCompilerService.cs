@@ -143,18 +143,32 @@ public sealed class DotNetSolutionCompilerService : ICompilerService
         if (modelModifier.PersistentState.ResourceUri.Value.EndsWith(CommonFacts.DOT_NET_SOLUTION_X))
         {
             using StreamReader sr = new StreamReader(modelModifier.PersistentState.ResourceUri.Value);
-            _textEditorService.LEXER_miscTextSpanList.Clear();
-            var lexerOutput = XmlLexer.Lex(new StreamReaderWrap(sr), _textEditorService.LEXER_miscTextSpanList);
+
+            editContext.TextEditorService.Model_BeginStreamSyntaxHighlighting(
+                editContext,
+                modelModifier);
+
+            var lexerOutput = XmlLexer.Lex(new StreamReaderWrap(sr), modelModifier, textSpanList: null);
             syntaxTokenList = lexerOutput.TextSpanList.Select(x => new SyntaxToken(SyntaxKind.NotApplicable, x)).ToList();
+
+            editContext.TextEditorService.Model_FinalizeStreamSyntaxHighlighting(
+                editContext,
+                modelModifier);
         }
         else
         {
             using StreamReader sr = new StreamReader(modelModifier.PersistentState.ResourceUri.Value);
-            _textEditorService.LEXER_miscTextSpanList.Clear();
-            // I removed the '_textEditorService.LEXER_miscTextSpanList' usage here
-            // I'm not sure if I want it for the '.sln' I have to consider it.
+
+            editContext.TextEditorService.Model_BeginStreamSyntaxHighlighting(
+                editContext,
+                modelModifier);
+
             var lexerOutput = DotNetSolutionLexer.Lex(new StreamReaderWrap(sr));
             syntaxTokenList = lexerOutput.TextSpanList.Select(x => new SyntaxToken(SyntaxKind.NotApplicable, x)).ToList();
+
+            editContext.TextEditorService.Model_FinalizeStreamSyntaxHighlighting(
+                editContext,
+                modelModifier);
         }
         
         lock (_resourceMapLock)

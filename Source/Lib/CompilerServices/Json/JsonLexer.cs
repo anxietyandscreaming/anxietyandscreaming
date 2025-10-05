@@ -1,5 +1,6 @@
 using Clair.TextEditor.RazorLib.Lexers.Models;
 using Clair.TextEditor.RazorLib.Decorations.Models;
+using Clair.TextEditor.RazorLib.TextEditors.Models;
 
 namespace Clair.CompilerServices.Json;
 
@@ -11,10 +12,10 @@ public static class JsonLexer
         Expect_PropertyValue,
     }
 
-    public static JsonLexerOutput Lex(StreamReaderWrap streamReaderWrap, List<TextEditorTextSpan> textSpanList)
+    public static JsonLexerOutput Lex(StreamReaderWrap streamReaderWrap, TextEditorModel modelModifier)
     {
         var context = CssLexerContextKind.Expect_PropertyName;
-        var output = new JsonLexerOutput(textSpanList);
+        var output = new JsonLexerOutput(modelModifier);
         
         while (!streamReaderWrap.IsEof)
         {
@@ -91,7 +92,7 @@ public static class JsonLexer
                         _ = streamReaderWrap.ReadCharacter();
                     }
                     
-                    output.TextSpanList.Add(new TextEditorTextSpan(
+                    output.ModelModifier.ApplySyntaxHighlightingByTextSpan(new TextEditorTextSpan(
                         textStartPosition,
                         streamReaderWrap.PositionIndex,
                         (byte)GenericDecorationKind.Json_Keyword,
@@ -143,7 +144,7 @@ public static class JsonLexer
                     
                     if (streamReaderWrap.CurrentCharacter == ':')
                     {
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+                        output.ModelModifier.ApplySyntaxHighlightingByTextSpan(new TextEditorTextSpan(
                             stringStartPosition,
                             endPosition,
                             (byte)GenericDecorationKind.Json_PropertyKey,
@@ -151,7 +152,7 @@ public static class JsonLexer
                     }
                     else
                     {
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+                        output.ModelModifier.ApplySyntaxHighlightingByTextSpan(new TextEditorTextSpan(
                             stringStartPosition,
                             endPosition,
                             (byte)GenericDecorationKind.Json_String,
@@ -178,7 +179,7 @@ public static class JsonLexer
                             _ = streamReaderWrap.ReadCharacter();
                         }
                         
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+                        output.ModelModifier.ApplySyntaxHighlightingByTextSpan(new TextEditorTextSpan(
                             commentStartPosition,
                             streamReaderWrap.PositionIndex,
                             (byte)GenericDecorationKind.Json_BlockComment,
@@ -202,7 +203,7 @@ public static class JsonLexer
                             _ = streamReaderWrap.ReadCharacter();
                         }
                         
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+                        output.ModelModifier.ApplySyntaxHighlightingByTextSpan(new TextEditorTextSpan(
                             commentStartPosition,
                             streamReaderWrap.PositionIndex,
                             (byte)GenericDecorationKind.Json_LineComment,

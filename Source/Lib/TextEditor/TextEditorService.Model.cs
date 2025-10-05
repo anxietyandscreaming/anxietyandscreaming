@@ -229,7 +229,7 @@ public partial class TextEditorService
             }
         }
 
-        for (var i = 0; i < localRichCharacterList.Length - 1; i++)
+        for (var i = 0; i < localRichCharacterList.Length; i++)
         {
             if (!positionsPainted.Contains(i))
             {
@@ -259,6 +259,34 @@ public partial class TextEditorService
             editContext,
             modelModifier,
             textSpanList);
+
+        // TODO: Why does painting reload virtualization result???
+        modelModifier.ShouldCalculateVirtualizationResult = true;
+    }
+
+    public void Model_BeginStreamSyntaxHighlighting(
+        TextEditorEditContext editContext,
+        TextEditorModel modelModifier)
+    {
+        for (var i = 0; i < modelModifier.RichCharacterList.Length; i++)
+        {
+            // DecorationByte of 0 is to be 'None'
+            modelModifier.__SetDecorationByte(i, 0);
+        }
+    }
+    
+    public void Model_FinalizeStreamSyntaxHighlighting(
+        TextEditorEditContext editContext,
+        TextEditorModel modelModifier)
+    {
+        foreach (var viewModelKey in modelModifier.PersistentState.ViewModelKeyList)
+        {
+            var viewModel = editContext.GetViewModelModifier(viewModelKey);
+
+            var componentData = viewModel.PersistentState.ComponentData;
+            if (componentData is not null)
+                componentData.LineIndexCache.IsInvalid = true;
+        }
 
         // TODO: Why does painting reload virtualization result???
         modelModifier.ShouldCalculateVirtualizationResult = true;

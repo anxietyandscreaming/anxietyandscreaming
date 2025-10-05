@@ -1,13 +1,14 @@
 using Clair.TextEditor.RazorLib.Lexers.Models;
+using Clair.TextEditor.RazorLib.TextEditors.Models;
 
 namespace Clair.CompilerServices.Json;
 
 public struct JsonLexerOutput
 {
-    public JsonLexerOutput(List<TextEditorTextSpan> textSpanList)
+    public JsonLexerOutput(TextEditorModel modelModifier)
     {
-        TextSpanList = textSpanList;
+        ModelModifier = modelModifier;
     }
     
-    public List<TextEditorTextSpan> TextSpanList { get; }
+    public TextEditorModel ModelModifier { get; }
 }

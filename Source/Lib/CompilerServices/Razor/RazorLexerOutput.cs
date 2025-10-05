@@ -1,13 +1,14 @@
 using Clair.TextEditor.RazorLib.Lexers.Models;
+using Clair.TextEditor.RazorLib.TextEditors.Models;
 
 namespace Clair.CompilerServices.Razor;
 
 public struct RazorLexerOutput
 {
-    public RazorLexerOutput(List<TextEditorTextSpan> textSpan)
+    public RazorLexerOutput(TextEditorModel modelModifier)
     {
-        TextSpanList = textSpan;
+        ModelModifier = modelModifier;
     }
     
-    public List<TextEditorTextSpan> TextSpanList { get; }
+    public TextEditorModel ModelModifier { get; }
 }
