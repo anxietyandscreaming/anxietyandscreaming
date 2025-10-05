@@ -80,7 +80,9 @@ public static partial class Parser
                             new Symbol(
                                 SyntaxKind.NamespaceSymbol,
                                 parserModel.GetNextSymbolId(),
-                                textSpan));
+                                textSpan.StartInclusiveIndex,
+                                textSpan.EndExclusiveIndex,
+                                textSpan.ByteIndex));
                         ++parserModel.Compilation.SymbolLength;
                     }
                 
@@ -116,7 +118,9 @@ public static partial class Parser
             new Symbol(
                 SyntaxKind.NamespaceSymbol,
                 parserModel.GetNextSymbolId(),
-                textSpan));
+                textSpan.StartInclusiveIndex,
+                textSpan.EndExclusiveIndex,
+                textSpan.ByteIndex));
         ++parserModel.Compilation.SymbolLength;
 
         return new SyntaxToken(SyntaxKind.IdentifierToken, textSpan);

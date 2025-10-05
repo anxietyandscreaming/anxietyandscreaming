@@ -42,7 +42,7 @@
 			  	syntaxViewModelLocal.TargetSymbol.SyntaxKind == SyntaxKind.PropertySymbol))
 	{
 		prefixText = "(symbol)";
-		text = syntaxViewModelLocal.GetTextFromTextSpan(syntaxViewModelLocal.TargetSymbol.TextSpan);
+		text = syntaxViewModelLocal.GetTextFromSymbol(syntaxViewModelLocal.TargetSymbol);
 		variableDeclarationNode = null;
 	}
 	else

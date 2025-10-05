@@ -36,9 +36,9 @@ public partial class SymbolDisplay : ComponentBase
         try
         {
             var outShouldRenderHashCode = HashCode.Combine(
-                Symbol.TextSpan.StartInclusiveIndex,
-                Symbol.TextSpan.EndExclusiveIndex,
-                Symbol.TextSpan.DecorationByte,
+                Symbol.StartInclusiveIndex,
+                Symbol.EndExclusiveIndex,
+                Symbol.ByteIndex,
                 AbsolutePathId);
                 
             if (outShouldRenderHashCode != _shouldRenderHashCode)
@@ -94,7 +94,7 @@ public partial class SymbolDisplay : ComponentBase
                 return default;
     
             return extendedCompilerService.GetSyntaxNode(
-                symbolLocal.TextSpan.StartInclusiveIndex,
+                symbolLocal.StartInclusiveIndex,
                 textEditorModel.PersistentState.ResourceUri,
                 compilerServiceResource);
         }
@@ -135,7 +135,11 @@ public partial class SymbolDisplay : ComponentBase
             if (absolutePathId == 0)
                 return default;
 
-            return extendedCompilerService.GetDefinitionNodeValue(symbolLocal.TextSpan, absolutePathId, compilerServiceResource, symbolLocal);
+            return extendedCompilerService.GetDefinitionNodeValue(
+                symbolLocal.ToTextSpan(),
+                absolutePathId,
+                compilerServiceResource,
+                symbolLocal);
         }
         catch (Exception e)
         {
