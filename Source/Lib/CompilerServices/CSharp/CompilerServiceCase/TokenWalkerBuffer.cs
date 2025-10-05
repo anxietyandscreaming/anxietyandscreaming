@@ -6,6 +6,7 @@ using Clair.Extensions.CompilerServices.Syntax.Utility;
 using Clair.CompilerServices.CSharp.LexerCase;
 using Clair.CompilerServices.CSharp.ParserCase;
 using Clair.CompilerServices.CSharp.BinderCase;
+using Clair.TextEditor.RazorLib.TextEditors.Models;
 
 namespace Clair.CompilerServices.CSharp.CompilerServiceCase;
 
@@ -34,8 +35,16 @@ public class TokenWalkerBuffer
     /// <summary>Trust that ReInitialize(/*...*/) will be invoked is presumed here.</summary>
     private CSharpBinder _binder = null!;
 
-    public List<TextEditorTextSpan> MiscTextSpanList { get; private set; }
-    
+    public void MiscTextSpanListAdd(TextEditorTextSpan textSpan)
+    {
+        if (TextEditorModel is null)
+            return;
+
+        TextEditorModel.ApplySyntaxHighlightingByTextSpan(textSpan);
+    }
+
+    public TextEditorModel? TextEditorModel { get; private set; }
+
     public int ConsumeCounter { get; private set; }
     
     public StreamReaderPooledBufferWrap StreamReaderWrap { get; set; }
@@ -133,7 +142,7 @@ public class TokenWalkerBuffer
     public void ReInitialize(
         CSharpBinder binder,
         ResourceUri resourceUri,
-        List<TextEditorTextSpan> miscTextSpanList,
+        TextEditorModel? textEditorModel,
         TokenWalkerBuffer tokenWalkerBuffer,
         StreamReaderPooledBufferWrap streamReaderWrap,
         bool shouldUseSharedStringWalker)
@@ -144,8 +153,8 @@ public class TokenWalkerBuffer
         ConsumeCounter = 0;
         _deferredParsingTuple = (-1, -1, -1);
         _deferredParsingTupleStack.Clear();
-    
-        MiscTextSpanList = miscTextSpanList;
+
+        TextEditorModel = textEditorModel;
         
         _previousEscapeCharacterTextSpan = new TextEditorTextSpan(
             0,
@@ -216,11 +225,11 @@ public class TokenWalkerBuffer
             ++_index;
             _syntaxTokenBuffer[0] = CSharpLexer.Lex(
                 _binder,
-                MiscTextSpanList,
+                this,
                 StreamReaderWrap,
                 ref _previousEscapeCharacterTextSpan,
                 ref _interpolatedExpressionUnmatchedBraceCount);
-            MiscTextSpanList.Add(_syntaxTokenBuffer[0].TextSpan);
+            MiscTextSpanListAdd(_syntaxTokenBuffer[0].TextSpan);
             
             
         }
@@ -305,11 +314,11 @@ public class TokenWalkerBuffer
                             ++_index;
                             _syntaxTokenBuffer[0] = CSharpLexer.Lex(
                                 _binder,
-                                MiscTextSpanList,
+                                this,
                                 StreamReaderWrap,
                                 ref _previousEscapeCharacterTextSpan,
                                 ref _interpolatedExpressionUnmatchedBraceCount);
-                            MiscTextSpanList.Add(_syntaxTokenBuffer[0].TextSpan);
+                            MiscTextSpanListAdd(_syntaxTokenBuffer[0].TextSpan);
                             return _syntaxTokenBuffer[0];
                         }
                     }
@@ -332,11 +341,11 @@ public class TokenWalkerBuffer
             ++_index;
             _syntaxTokenBuffer[0] = CSharpLexer.Lex(
                 _binder,
-                MiscTextSpanList,
+                this,
                 StreamReaderWrap,
                 ref _previousEscapeCharacterTextSpan,
                 ref _interpolatedExpressionUnmatchedBraceCount);
-            MiscTextSpanList.Add(_syntaxTokenBuffer[0].TextSpan);
+            MiscTextSpanListAdd(_syntaxTokenBuffer[0].TextSpan);
         }
 
         // TODO: Peek EOF

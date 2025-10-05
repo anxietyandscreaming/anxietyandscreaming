@@ -1,5 +1,6 @@
 using Clair.TextEditor.RazorLib.Lexers.Models;
 using Clair.TextEditor.RazorLib.Decorations.Models;
+using Clair.TextEditor.RazorLib.TextEditors.Models;
 
 namespace Clair.CompilerServices.Xml;
 
@@ -13,17 +14,18 @@ public static class XmlLexer
         Expect_AttributeValue,
     }
 
-    public static XmlLexerOutput Lex(StreamReaderWrap streamReaderWrap, List<TextEditorTextSpan> textSpanList)
+    public static XmlLexerOutput Lex(StreamReaderWrap streamReaderWrap, TextEditorModel? modelModifier, List<TextEditorTextSpan>? textSpanList)
     {
         var context = XmlLexerContextKind.Expect_TagOrText;
-        var output = new XmlLexerOutput(textSpanList);
+        var output = new XmlLexerOutput(modelModifier, textSpanList);
         
         // This gets updated throughout the loop
         var startPosition = streamReaderWrap.PositionIndex;
         var startByte = streamReaderWrap.ByteIndex;
-        
+
         var indexOfMostRecentTagOpen = -1;
-        
+        TextEditorTextSpan textSpanOfMostRecentTagOpen = default;
+
         while (!streamReaderWrap.IsEof)
         {
             switch (streamReaderWrap.CurrentCharacter)
@@ -99,7 +101,7 @@ public static class XmlLexer
                             }
                             _ = streamReaderWrap.ReadCharacter();
                         }
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+                        output.AddTextSpan(new TextEditorTextSpan(
                             attributeNameStartPosition,
                             streamReaderWrap.PositionIndex,
                             (byte)GenericDecorationKind.Xml_AttributeName,
@@ -122,7 +124,7 @@ public static class XmlLexer
                             }
                             _ = streamReaderWrap.ReadCharacter();
                         }
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+                        output.AddTextSpan(new TextEditorTextSpan(
                             attributeValueStartPosition,
                             streamReaderWrap.PositionIndex,
                             (byte)GenericDecorationKind.Xml_AttributeValue,
@@ -142,7 +144,7 @@ public static class XmlLexer
                             }
                             _ = streamReaderWrap.ReadCharacter();
                         }
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+                        output.AddTextSpan(new TextEditorTextSpan(
                             textStartPosition,
                             streamReaderWrap.PositionIndex,
                             (byte)GenericDecorationKind.Xml_Text,
@@ -177,7 +179,7 @@ public static class XmlLexer
                             }
                             _ = streamReaderWrap.ReadCharacter();
                         }
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+                        output.AddTextSpan(new TextEditorTextSpan(
                             attributeValueStartPosition,
                             streamReaderWrap.PositionIndex,
                             (byte)GenericDecorationKind.Xml_AttributeValue,
@@ -193,7 +195,7 @@ public static class XmlLexer
                         var delimiterStartPosition = streamReaderWrap.PositionIndex;
                         var delimiterStartByte = streamReaderWrap.ByteIndex;
                         _ = streamReaderWrap.ReadCharacter();
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+                        output.AddTextSpan(new TextEditorTextSpan(
                             delimiterStartPosition,
                             streamReaderWrap.PositionIndex,
                             (byte)GenericDecorationKind.Xml_AttributeDelimiter,
@@ -214,12 +216,12 @@ public static class XmlLexer
                             }
                             _ = streamReaderWrap.ReadCharacter();
                         }
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+                        output.AddTextSpan(new TextEditorTextSpan(
                             attributeValueStartPosition,
                             attributeValueEnd,
                             (byte)GenericDecorationKind.Xml_AttributeValue,
                             attributeValueStartByte));
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+                        output.AddTextSpan(new TextEditorTextSpan(
                             delimiterStartPosition,
                             streamReaderWrap.PositionIndex,
                             (byte)GenericDecorationKind.Xml_AttributeDelimiter,
@@ -234,7 +236,7 @@ public static class XmlLexer
                         var delimiterStartPosition = streamReaderWrap.PositionIndex;
                         var delimiterStartByte = streamReaderWrap.ByteIndex;
                         _ = streamReaderWrap.ReadCharacter();
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+                        output.AddTextSpan(new TextEditorTextSpan(
                             delimiterStartPosition,
                             streamReaderWrap.PositionIndex,
                             (byte)GenericDecorationKind.Xml_AttributeDelimiter,
@@ -255,12 +257,12 @@ public static class XmlLexer
                             }
                             _ = streamReaderWrap.ReadCharacter();
                         }
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+                        output.AddTextSpan(new TextEditorTextSpan(
                             attributeValueStartPosition,
                             attributeValueEnd,
                             (byte)GenericDecorationKind.Xml_AttributeValue,
                             attributeValueStartByte));
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+                        output.AddTextSpan(new TextEditorTextSpan(
                             delimiterStartPosition,
                             streamReaderWrap.PositionIndex,
                             (byte)GenericDecorationKind.Xml_AttributeDelimiter,
@@ -282,6 +284,7 @@ public static class XmlLexer
                                     DecorationByte = (byte)GenericDecorationKind.Xml_TagNameSelf,
                                 };
                                 indexOfMostRecentTagOpen = -1;
+                                textSpanOfMostRecentTagOpen = default;
                             }
                             context = XmlLexerContextKind.Expect_TagOrText;
                         }
@@ -326,7 +329,7 @@ public static class XmlLexer
                         var attributeValueStartPosition = streamReaderWrap.PositionIndex;
                         var attributeValueStartByte = streamReaderWrap.ByteIndex;
                         _ = streamReaderWrap.ReadCharacter();
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+                        output.AddTextSpan(new TextEditorTextSpan(
                             attributeValueStartPosition,
                             streamReaderWrap.PositionIndex,
                             (byte)GenericDecorationKind.Xml_AttributeOperator,
@@ -455,15 +458,17 @@ public static class XmlLexer
                             }
                             _ = streamReaderWrap.ReadCharacter();
                         }
-                        if (tagDecoration == (byte)GenericDecorationKind.Xml_TagNameOpen)
-                        {
-                            indexOfMostRecentTagOpen = output.TextSpanList.Count;
-                        }
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+                        var textSpan = new TextEditorTextSpan(
                             tagNameStartPosition,
                             streamReaderWrap.PositionIndex,
                             tagDecoration,
-                            tagNameStartByte));
+                            tagNameStartByte);
+                        if (tagDecoration == (byte)GenericDecorationKind.Xml_TagNameOpen)
+                        {
+                            indexOfMostRecentTagOpen = output.TextSpanList.Count;
+                            textSpanOfMostRecentTagOpen = textSpan;
+                        }
+                        output.AddTextSpan(textSpan);
 
                         if (streamReaderWrap.CurrentCharacter == '>')
                         {

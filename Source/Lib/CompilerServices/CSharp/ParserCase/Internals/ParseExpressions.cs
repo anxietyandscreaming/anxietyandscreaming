@@ -1111,7 +1111,7 @@ public static partial class Parser
             ++parserModel.Compilation.SymbolLength;
 
 
-            parserModel.Binder.TextEditorService.LEXER_miscTextSpanList.Add(typeClauseNode.TypeIdentifierToken.TextSpan with
+            parserModel.TokenWalker.MiscTextSpanListAdd(typeClauseNode.TypeIdentifierToken.TextSpan with
             {
                 DecorationByte = (byte)GenericDecorationKind.Type
             });
@@ -1224,7 +1224,7 @@ public static partial class Parser
                             typeClauseNode.TypeIdentifierToken.TextSpan.ByteIndex));
                     ++parserModel.Compilation.SymbolLength;
 
-                    parserModel.Binder.TextEditorService.LEXER_miscTextSpanList.Add(typeClauseNode.TypeIdentifierToken.TextSpan with
+                    parserModel.TokenWalker.MiscTextSpanListAdd(typeClauseNode.TypeIdentifierToken.TextSpan with
                     {
                         DecorationByte = (byte)GenericDecorationKind.Type
                     });
@@ -1292,7 +1292,7 @@ public static partial class Parser
                 ++parserModel.Compilation.SymbolLength;
 
 
-                parserModel.Binder.TextEditorService.LEXER_miscTextSpanList.Add(functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan with
+                parserModel.TokenWalker.MiscTextSpanListAdd(functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan with
                 {
                     DecorationByte = (byte)GenericDecorationKind.Function
                 });
@@ -3742,7 +3742,7 @@ public static partial class Parser
                 ++parserModel.Compilation.SymbolLength;
 
 
-                parserModel.Binder.TextEditorService.LEXER_miscTextSpanList.Add(functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan with
+                parserModel.TokenWalker.MiscTextSpanListAdd(functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan with
                 {
                     DecorationByte = (byte)GenericDecorationKind.Function
                 });

@@ -1814,8 +1814,19 @@ public sealed class TextEditorModel
 
         __RemoveRange(positionIndex, count);
     }
+
+    public void ApplySyntaxHighlightingByTextSpan(TextEditorTextSpan textSpan)
+    {
+        for (var i = textSpan.StartInclusiveIndex; i < textSpan.EndExclusiveIndex; i++)
+        {
+            if (i < 0 || i >= RichCharacterList.Length)
+                continue;
+
+            __SetDecorationByte(i, textSpan.DecorationByte);
+        }
+    }
     #endregion
-    
+
     #region TextEditorModelMethods
     /// <summary>
     /// Returns the Length of a line however it does not include the line ending characters by default.
