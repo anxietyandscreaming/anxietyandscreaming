@@ -146,8 +146,12 @@ public sealed class RazorCompilerService : ICompilerService
     public ValueTask ParseAsync(TextEditorEditContext editContext, TextEditorModel modelModifier, bool shouldApplySyntaxHighlighting)
     {
         using StreamReader sr = new StreamReader(modelModifier.PersistentState.ResourceUri.Value);
-        _textEditorService.LEXER_miscTextSpanList.Clear();
-        var lexerOutput = RazorLexer.Lex(new StreamReaderWrap(sr), _textEditorService.LEXER_miscTextSpanList);
+
+        editContext.TextEditorService.Model_BeginStreamSyntaxHighlighting(
+            editContext,
+            modelModifier);
+
+        var lexerOutput = RazorLexer.Lex(new StreamReaderWrap(sr), modelModifier);
     
         lock (_resourceMapLock)
         {
@@ -162,10 +166,9 @@ public sealed class RazorCompilerService : ICompilerService
             }
         }
         
-        editContext.TextEditorService.Model_ApplySyntaxHighlighting(
+        editContext.TextEditorService.Model_FinalizeStreamSyntaxHighlighting(
             editContext,
-            modelModifier,
-            lexerOutput.TextSpanList);
+            modelModifier);
         
         return ValueTask.CompletedTask;
     }
