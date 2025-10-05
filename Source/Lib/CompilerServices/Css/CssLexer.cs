@@ -1,5 +1,6 @@
 using Clair.TextEditor.RazorLib.Lexers.Models;
 using Clair.TextEditor.RazorLib.Decorations.Models;
+using Clair.TextEditor.RazorLib.TextEditors.Models;
 
 namespace Clair.CompilerServices.Css;
 
@@ -11,10 +12,10 @@ public static class CssLexer
         Expect_PropertyValue,
     }
     
-    public static CssLexerOutput Lex(StreamReaderWrap streamReaderWrap, List<TextEditorTextSpan> textSpanList)
+    public static CssLexerOutput Lex(StreamReaderWrap streamReaderWrap, TextEditorModel modelModifier)
     {
         var context = CssLexerContextKind.Expect_PropertyName;
-        var output = new CssLexerOutput(textSpanList);
+        var output = new CssLexerOutput(modelModifier);
         
         var braceMatching = 0;
         
@@ -106,7 +107,7 @@ public static class CssLexer
                     
                     if (streamReaderWrap.CurrentCharacter == '(')
                     {
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+                        output.ModelModifier.ApplySyntaxHighlightingByTextSpan(new TextEditorTextSpan(
                             textStartPosition,
                             endPosition,
                             (byte)GenericDecorationKind.Css_Function,
@@ -114,7 +115,7 @@ public static class CssLexer
                     }
                     else if (braceMatching == 0)
                     {
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+                        output.ModelModifier.ApplySyntaxHighlightingByTextSpan(new TextEditorTextSpan(
                             textStartPosition,
                             endPosition,
                             (byte)GenericDecorationKind.Css_Identifier,
@@ -124,7 +125,7 @@ public static class CssLexer
                     {
                         if (context == CssLexerContextKind.Expect_PropertyName)
                         {
-                            output.TextSpanList.Add(new TextEditorTextSpan(
+                            output.ModelModifier.ApplySyntaxHighlightingByTextSpan(new TextEditorTextSpan(
                                 textStartPosition,
                                 endPosition,
                                 (byte)GenericDecorationKind.Css_PropertyName,
@@ -132,7 +133,7 @@ public static class CssLexer
                         }
                         else
                         {
-                            output.TextSpanList.Add(new TextEditorTextSpan(
+                            output.ModelModifier.ApplySyntaxHighlightingByTextSpan(new TextEditorTextSpan(
                                 textStartPosition,
                                 endPosition,
                                 (byte)GenericDecorationKind.Css_PropertyValue,
@@ -173,8 +174,8 @@ public static class CssLexer
                             }
                             _ = streamReaderWrap.ReadCharacter();
                         }
-                        
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+
+                        output.ModelModifier.ApplySyntaxHighlightingByTextSpan(new TextEditorTextSpan(
                             commentStartPosition,
                             streamReaderWrap.PositionIndex,
                             (byte)GenericDecorationKind.Css_Comment,
@@ -283,7 +284,7 @@ public static class CssLexer
                     {
                         if (streamReaderWrap.CurrentCharacter == ')')
                         {
-                            output.TextSpanList.Add(new TextEditorTextSpan(
+                            output.ModelModifier.ApplySyntaxHighlightingByTextSpan(new TextEditorTextSpan(
                                 positionIndex,
                                 streamReaderWrap.PositionIndex,
                                 (byte)GenericDecorationKind.None,
@@ -428,8 +429,8 @@ public static class CssLexer
                             }
                             _ = streamReaderWrap.ReadCharacter();
                         }
-                        
-                        output.TextSpanList.Add(new TextEditorTextSpan(
+
+                        output.ModelModifier.ApplySyntaxHighlightingByTextSpan(new TextEditorTextSpan(
                             startPosition,
                             streamReaderWrap.PositionIndex,
                             (byte)GenericDecorationKind.Css_PropertyValue,
