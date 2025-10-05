@@ -277,12 +277,19 @@ public static class XmlLexer
                     {
                         if (context == XmlLexerContextKind.Expect_AttributeName || context == XmlLexerContextKind.Expect_AttributeValue)
                         {
-                            if (indexOfMostRecentTagOpen != -1)
+                            if (textSpanOfMostRecentTagOpen.DecorationByte != 0)
                             {
-                                output.TextSpanList[indexOfMostRecentTagOpen] = output.TextSpanList[indexOfMostRecentTagOpen] with
+                                if (output.TextSpanList is not null && indexOfMostRecentTagOpen != -1)
+                                {
+                                    output.TextSpanList[indexOfMostRecentTagOpen] = textSpanOfMostRecentTagOpen with
+                                    {
+                                        DecorationByte = (byte)GenericDecorationKind.Xml_TagNameSelf,
+                                    };
+                                }
+                                output.ModelModifier?.ApplySyntaxHighlightingByTextSpan(textSpanOfMostRecentTagOpen with
                                 {
                                     DecorationByte = (byte)GenericDecorationKind.Xml_TagNameSelf,
-                                };
+                                });
                                 indexOfMostRecentTagOpen = -1;
                                 textSpanOfMostRecentTagOpen = default;
                             }
@@ -465,7 +472,10 @@ public static class XmlLexer
                             tagNameStartByte);
                         if (tagDecoration == (byte)GenericDecorationKind.Xml_TagNameOpen)
                         {
-                            indexOfMostRecentTagOpen = output.TextSpanList.Count;
+                            if (output.TextSpanList is not null)
+                            {
+                                indexOfMostRecentTagOpen = output.TextSpanList.Count;
+                            }
                             textSpanOfMostRecentTagOpen = textSpan;
                         }
                         output.AddTextSpan(textSpan);

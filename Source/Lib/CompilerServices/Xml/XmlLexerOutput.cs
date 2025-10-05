@@ -11,7 +11,7 @@ public struct XmlLexerOutput
         TextSpanList = textSpanList;
     }
     
-    private TextEditorModel? ModelModifier { get; }
+    public TextEditorModel? ModelModifier { get; }
     public List<TextEditorTextSpan>? TextSpanList { get; }
 
     public void AddTextSpan(TextEditorTextSpan textSpan)
