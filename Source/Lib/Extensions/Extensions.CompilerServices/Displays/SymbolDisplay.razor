@@ -109,7 +109,7 @@
                                             </span>
 
                                             <span class="@(string.Empty /* Namespaces do not have their own css class as of (2023-07-20) */)">
-                                                @syntaxViewModel.GetTextFromTextSpan(symbolLocal.TextSpan)
+                                                @syntaxViewModel.GetTextFromSymbol(symbolLocal)
                                             </span>
                                         </text>
                                         break;
@@ -122,7 +122,7 @@
                                             </span>
 
                                             <span class="@(string.Empty /* Labels do not have their own css class as of (2023-07-20) */)">
-                                                @syntaxViewModel.GetTextFromTextSpan(symbolLocal.TextSpan)
+                                                @syntaxViewModel.GetTextFromSymbol(symbolLocal)
                                             </span>
                                         </text>
                                         break;
@@ -135,7 +135,7 @@
                                             </span>
 
                                             <span class="@(string.Empty /* Discards do not have their own css class as of (2023-07-20) */)">
-                                                @syntaxViewModel.GetTextFromTextSpan(symbolLocal.TextSpan)
+                                                @syntaxViewModel.GetTextFromSymbol(symbolLocal)
                                             </span>
                                         </text>
                                         break;
@@ -148,8 +148,8 @@
                                             </span>
 
                                             <button class="ci_button ci_te_source-file"
-                                                    @onclick="() => OpenInEditorOnClick(syntaxViewModel.GetTextFromTextSpan(symbolLocal.TextSpan))">
-                                                @syntaxViewModel.GetTextFromTextSpan(symbolLocal.TextSpan)
+                                                    @onclick="() => OpenInEditorOnClick(syntaxViewModel.GetTextFromSymbol(symbolLocal))">
+                                                @syntaxViewModel.GetTextFromSymbol(symbolLocal)
                                             </button>
                                         </text>
                                         break;
@@ -162,7 +162,7 @@
                                             </span>
 
                                             <span class="@(string.Empty /* Unknown-symbol-kinds do not have their own css class as of (2023-07-20) */)">
-                                                @syntaxViewModel.GetTextFromTextSpan(symbolLocal.TextSpan)
+                                                @syntaxViewModel.GetTextFromSymbol(symbolLocal)
                                             </span>
                                         </text>
                                         break;

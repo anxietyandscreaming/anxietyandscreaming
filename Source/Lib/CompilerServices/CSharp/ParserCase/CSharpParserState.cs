@@ -187,10 +187,9 @@ public ref partial struct CSharpParserState
             new Symbol(
                 SyntaxKind.DiscardSymbol,
                 GetNextSymbolId(),
-                identifierToken.TextSpan with
-                {
-                    DecorationByte = (byte)GenericDecorationKind.None,
-                }));
+                identifierToken.TextSpan.StartInclusiveIndex,
+                identifierToken.TextSpan.EndExclusiveIndex,
+                identifierToken.TextSpan.ByteIndex));
         ++Compilation.SymbolLength;
     }
     
@@ -201,11 +200,15 @@ public ref partial struct CSharpParserState
             new Symbol(
             SyntaxKind.FunctionSymbol,
             GetNextSymbolId(),
-            functionDefinitionNode.FunctionIdentifierToken.TextSpan with
-            {
-                DecorationByte = (byte)GenericDecorationKind.Function
-            }));
+            functionDefinitionNode.FunctionIdentifierToken.TextSpan.StartInclusiveIndex,
+            functionDefinitionNode.FunctionIdentifierToken.TextSpan.EndExclusiveIndex,
+            functionDefinitionNode.FunctionIdentifierToken.TextSpan.ByteIndex));
         ++Compilation.SymbolLength;
+
+        Binder.CSharpCompilerService.TextEditorService.LEXER_miscTextSpanList.Add(functionDefinitionNode.FunctionIdentifierToken.TextSpan with
+        {
+            DecorationByte = (byte)GenericDecorationKind.Function
+        });
     }
     
     public readonly void BindNamespaceStatementNode(NamespaceStatementNode namespaceStatementNode)
@@ -269,10 +272,9 @@ public ref partial struct CSharpParserState
             new Symbol(
                 SyntaxKind.LabelSymbol,
                 GetNextSymbolId(),
-                labelDeclarationNode.IdentifierToken.TextSpan with
-                {
-                    DecorationByte = (byte)GenericDecorationKind.None
-                }));
+                labelDeclarationNode.IdentifierToken.TextSpan.StartInclusiveIndex,
+                labelDeclarationNode.IdentifierToken.TextSpan.EndExclusiveIndex,
+                labelDeclarationNode.IdentifierToken.TextSpan.ByteIndex));
         ++Compilation.SymbolLength;
     
         if (TryGetLabelDeclarationNodeByScope(
@@ -348,10 +350,9 @@ public ref partial struct CSharpParserState
             new Symbol(
                 SyntaxKind.LabelSymbol,
                 GetNextSymbolId(),
-                labelReferenceNode.IdentifierToken.TextSpan with
-                {
-                    DecorationByte = (byte)GenericDecorationKind.None
-                }));
+                labelReferenceNode.IdentifierToken.TextSpan.StartInclusiveIndex,
+                labelReferenceNode.IdentifierToken.TextSpan.EndExclusiveIndex,
+                labelReferenceNode.IdentifierToken.TextSpan.ByteIndex));
         ++Compilation.SymbolLength;
     }
 
@@ -360,13 +361,17 @@ public ref partial struct CSharpParserState
         Binder.SymbolList.Insert(
             Compilation.SymbolOffset + Compilation.SymbolLength,
             new Symbol(
-            SyntaxKind.ConstructorSymbol,
-            GetNextSymbolId(),
-            identifierToken.TextSpan with
-            {
-                DecorationByte = (byte)GenericDecorationKind.Type
-            }));
+                SyntaxKind.ConstructorSymbol,
+                GetNextSymbolId(),
+                identifierToken.TextSpan.StartInclusiveIndex,
+                identifierToken.TextSpan.EndExclusiveIndex,
+                identifierToken.TextSpan.ByteIndex));
         ++Compilation.SymbolLength;
+
+        Binder.CSharpCompilerService.TextEditorService.LEXER_miscTextSpanList.Add(identifierToken.TextSpan with
+        {
+            DecorationByte = (byte)GenericDecorationKind.Type
+        });
     }
 
     public void BindFunctionInvocationNode(FunctionInvocationNode functionInvocationNode)
@@ -374,13 +379,17 @@ public ref partial struct CSharpParserState
         Binder.SymbolList.Insert(
             Compilation.SymbolOffset + Compilation.SymbolLength,
             new Symbol(
-            SyntaxKind.FunctionSymbol,
-            GetNextSymbolId(),
-            functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan with
-            {
-                DecorationByte = (byte)GenericDecorationKind.Function
-            }));
+                SyntaxKind.FunctionSymbol,
+                GetNextSymbolId(),
+                functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan.StartInclusiveIndex,
+                functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan.EndExclusiveIndex,
+                functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan.ByteIndex));
         ++Compilation.SymbolLength;
+
+        Binder.CSharpCompilerService.TextEditorService.LEXER_miscTextSpanList.Add(functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan with
+        {
+            DecorationByte = (byte)GenericDecorationKind.Function
+        });
 
         if (TryGetFunctionHierarchically(
                 AbsolutePathId,
@@ -400,12 +409,11 @@ public ref partial struct CSharpParserState
         Binder.SymbolList.Insert(
             Compilation.SymbolOffset + Compilation.SymbolLength,
             new Symbol(
-            SyntaxKind.NamespaceSymbol,
-            GetNextSymbolId(),
-            namespaceIdentifierToken.TextSpan with
-            {
-                DecorationByte = (byte)GenericDecorationKind.None
-            }));
+                SyntaxKind.NamespaceSymbol,
+                GetNextSymbolId(),
+                namespaceIdentifierToken.TextSpan.StartInclusiveIndex,
+                namespaceIdentifierToken.TextSpan.EndExclusiveIndex,
+                namespaceIdentifierToken.TextSpan.ByteIndex));
         ++Compilation.SymbolLength;
     }
 
@@ -416,13 +424,17 @@ public ref partial struct CSharpParserState
             Binder.SymbolList.Insert(
                 Compilation.SymbolOffset + Compilation.SymbolLength,
                 new Symbol(
-                SyntaxKind.TypeSymbol,
-                GetNextSymbolId(),
-                typeClauseNode.TypeIdentifierToken.TextSpan with
-                {
-                    DecorationByte = (byte)GenericDecorationKind.Type
-                }));
+                    SyntaxKind.TypeSymbol,
+                    GetNextSymbolId(),
+                    typeClauseNode.TypeIdentifierToken.TextSpan.StartInclusiveIndex,
+                    typeClauseNode.TypeIdentifierToken.TextSpan.EndExclusiveIndex,
+                    typeClauseNode.TypeIdentifierToken.TextSpan.ByteIndex));
             ++Compilation.SymbolLength;
+
+            Binder.CSharpCompilerService.TextEditorService.LEXER_miscTextSpanList.Add(typeClauseNode.TypeIdentifierToken.TextSpan with
+            {
+                DecorationByte = (byte)GenericDecorationKind.Type
+            });
         }
     }
     
@@ -433,13 +445,17 @@ public ref partial struct CSharpParserState
             Binder.SymbolList.Insert(
                 Compilation.SymbolOffset + Compilation.SymbolLength,
                 new Symbol(
-                SyntaxKind.TypeSymbol,
-                GetNextSymbolId(),
-                identifierToken.TextSpan with
-                {
-                    DecorationByte = (byte)GenericDecorationKind.Type
-                }));
+                    SyntaxKind.TypeSymbol,
+                    GetNextSymbolId(),
+                    identifierToken.TextSpan.StartInclusiveIndex,
+                    identifierToken.TextSpan.EndExclusiveIndex,
+                    identifierToken.TextSpan.ByteIndex));
             ++Compilation.SymbolLength;
+
+            Binder.CSharpCompilerService.TextEditorService.LEXER_miscTextSpanList.Add(identifierToken.TextSpan with
+            {
+                DecorationByte = (byte)GenericDecorationKind.Type
+            });
         }
     }
 
@@ -654,11 +670,15 @@ public ref partial struct CSharpParserState
                     new Symbol(
                         SyntaxKind.FieldSymbol,
                         symbolId,
-                        identifierToken.TextSpan with
-                        {
-                            DecorationByte = (byte)GenericDecorationKind.Field
-                        }));
+                        identifierToken.TextSpan.StartInclusiveIndex,
+                        identifierToken.TextSpan.EndExclusiveIndex,
+                        identifierToken.TextSpan.ByteIndex));
                 ++Compilation.SymbolLength;
+
+                Binder.TextEditorService.LEXER_miscTextSpanList.Add(identifierToken.TextSpan with
+                {
+                    DecorationByte = (byte)GenericDecorationKind.Field
+                });
                 break;
             case VariableKind.Property:
                 Binder.SymbolList.Insert(
@@ -666,11 +686,16 @@ public ref partial struct CSharpParserState
                     new Symbol(
                         SyntaxKind.PropertySymbol,
                         symbolId,
-                        identifierToken.TextSpan with
-                        {
-                            DecorationByte = (byte)GenericDecorationKind.Property
-                        }));
+                        identifierToken.TextSpan.StartInclusiveIndex,
+                        identifierToken.TextSpan.EndExclusiveIndex,
+                        identifierToken.TextSpan.ByteIndex));
                 ++Compilation.SymbolLength;
+
+
+                Binder.TextEditorService.LEXER_miscTextSpanList.Add(identifierToken.TextSpan with
+                {
+                    DecorationByte = (byte)GenericDecorationKind.Property
+                });
                 break;
             case VariableKind.EnumMember:
                 Binder.SymbolList.Insert(
@@ -678,11 +703,15 @@ public ref partial struct CSharpParserState
                     new Symbol(
                         SyntaxKind.EnumMemberSymbol,
                         symbolId,
-                        identifierToken.TextSpan with
-                        {
-                            DecorationByte = (byte)GenericDecorationKind.Property
-                        }));
+                        identifierToken.TextSpan.StartInclusiveIndex,
+                        identifierToken.TextSpan.EndExclusiveIndex,
+                        identifierToken.TextSpan.ByteIndex));
                 ++Compilation.SymbolLength;
+
+                Binder.TextEditorService.LEXER_miscTextSpanList.Add(identifierToken.TextSpan with
+                {
+                    DecorationByte = (byte)GenericDecorationKind.Property
+                });
                 break;
             case VariableKind.Local:
                 goto default;
@@ -694,11 +723,15 @@ public ref partial struct CSharpParserState
                     new Symbol(
                         SyntaxKind.VariableSymbol,
                         symbolId,
-                        identifierToken.TextSpan with
-                        {
-                            DecorationByte = (byte)GenericDecorationKind.Variable
-                        }));
+                        identifierToken.TextSpan.StartInclusiveIndex,
+                        identifierToken.TextSpan.EndExclusiveIndex,
+                        identifierToken.TextSpan.ByteIndex));
                 ++Compilation.SymbolLength;
+
+                Binder.TextEditorService.LEXER_miscTextSpanList.Add(identifierToken.TextSpan with
+                {
+                    DecorationByte = (byte)GenericDecorationKind.Variable
+                });
                 break;
         }
         

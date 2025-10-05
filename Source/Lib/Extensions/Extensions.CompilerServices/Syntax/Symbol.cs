@@ -4,11 +4,13 @@ namespace Clair.Extensions.CompilerServices.Syntax;
 
 public record struct Symbol
 {
-    public Symbol(SyntaxKind syntaxKind, int symbolId, TextEditorTextSpan textSpan)
+    public Symbol(SyntaxKind syntaxKind, int symbolId, int startInclusiveIndex, int endExclusiveIndex, int byteIndex)
     {
         SyntaxKind = syntaxKind;
         SymbolId = symbolId;
-        TextSpan = textSpan;
+        StartInclusiveIndex = startInclusiveIndex;
+        EndExclusiveIndex = endExclusiveIndex;
+        ByteIndex = byteIndex;
     }
 
     /// <summary>
@@ -38,7 +40,9 @@ public record struct Symbol
     /// from a symbol to arbitrary information, they'd be able to do so.
     /// </summary>
     public int SymbolId { get; }
-    public TextEditorTextSpan TextSpan { get; init; }
+    public int StartInclusiveIndex { get; init; }
+    public int EndExclusiveIndex { get; init; }
+    public int ByteIndex { get; init; }
 
     /// <summary>
     /// Bad (2025-02-07)
@@ -56,8 +60,13 @@ public record struct Symbol
     public string SymbolKindString => SyntaxKind.ToString();
 
     public SyntaxKind SyntaxKind { get; }
+
+    public readonly TextEditorTextSpan ToTextSpan()
+    {
+        return new TextEditorTextSpan(StartInclusiveIndex, EndExclusiveIndex, decorationByte: default, ByteIndex);
+    }
     
-    public bool IsDefault()
+    public readonly bool IsDefault()
     {
         return SyntaxKind == SyntaxKind.NotApplicable;
     }

@@ -151,4 +151,20 @@ public struct SyntaxViewModel
         
         return "null";
     }
+    
+    public string GetTextFromSymbol(Symbol symbol)
+    {
+        if (ExtendedCompilerService is IExtendedCompilerService extendedCompilerService)
+        {
+            var compilationUnit = ExtendedCompilerService.GetResourceByAbsolutePathId(AbsolutePathId)?.CompilationUnit;
+            
+            if (compilationUnit is IExtendedCompilationUnit extendedCompilationUnit)
+            {
+                return ExtendedCompilerService
+                    .UnsafeGetText(AbsolutePathId, new TextEditorTextSpan()) ?? string.Empty;
+            }
+        }
+        
+        return "null";
+    }
 }

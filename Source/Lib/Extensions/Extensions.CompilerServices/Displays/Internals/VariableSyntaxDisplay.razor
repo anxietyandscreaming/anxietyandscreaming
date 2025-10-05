@@ -63,7 +63,7 @@
 			  	syntaxViewModelLocal.TargetSymbol.SyntaxKind == SyntaxKind.EnumMemberSymbol))
 	{
 		prefixText = "(symbol)";
-		text = syntaxViewModelLocal.GetTextFromTextSpan(syntaxViewModelLocal.TargetSymbol.TextSpan);
+		text = syntaxViewModelLocal.GetTextFromSymbol(syntaxViewModelLocal.TargetSymbol);
 		textCssClass = "ci_variable";
 		variableDeclarationNode = default;
 		variableDeclarationMetadata = default;

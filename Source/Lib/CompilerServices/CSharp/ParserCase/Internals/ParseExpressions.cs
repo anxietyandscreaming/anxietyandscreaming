@@ -1105,12 +1105,17 @@ public static partial class Parser
                 new Symbol(
                     SyntaxKind.TypeSymbol,
                     symbolId,
-                    typeClauseNode.TypeIdentifierToken.TextSpan with
-                    {
-                        DecorationByte = (byte)GenericDecorationKind.Type
-                    }));
+                    typeClauseNode.TypeIdentifierToken.TextSpan.StartInclusiveIndex,
+                    typeClauseNode.TypeIdentifierToken.TextSpan.EndExclusiveIndex,
+                    typeClauseNode.TypeIdentifierToken.TextSpan.ByteIndex));
             ++parserModel.Compilation.SymbolLength;
-            
+
+
+            parserModel.Binder.TextEditorService.LEXER_miscTextSpanList.Add(typeClauseNode.TypeIdentifierToken.TextSpan with
+            {
+                DecorationByte = (byte)GenericDecorationKind.Type
+            });
+
             if (parserModel.Binder.SymbolIdToExternalTextSpanMap.TryGetValue(parserModel.AbsolutePathId, out var symbolIdToExternalTextSpanMap) &&
                 !typeDefinitionNode.IsDefault() &&
                 typeClauseNode.ExplicitDefinitionAbsolutePathId != parserModel.AbsolutePathId)
@@ -1214,12 +1219,16 @@ public static partial class Parser
                         new Symbol(
                             SyntaxKind.TypeSymbol,
                             symbolId,
-                            typeClauseNode.TypeIdentifierToken.TextSpan with
-                            {
-                                DecorationByte = (byte)GenericDecorationKind.Type
-                            }));
+                            typeClauseNode.TypeIdentifierToken.TextSpan.StartInclusiveIndex,
+                            typeClauseNode.TypeIdentifierToken.TextSpan.EndExclusiveIndex,
+                            typeClauseNode.TypeIdentifierToken.TextSpan.ByteIndex));
                     ++parserModel.Compilation.SymbolLength;
-                    
+
+                    parserModel.Binder.TextEditorService.LEXER_miscTextSpanList.Add(typeClauseNode.TypeIdentifierToken.TextSpan with
+                    {
+                        DecorationByte = (byte)GenericDecorationKind.Type
+                    });
+
                     if (parserModel.Binder.SymbolIdToExternalTextSpanMap.TryGetValue(parserModel.AbsolutePathId, out var symbolIdToExternalTextSpanMap) &&
                         typeClauseNode.ExplicitDefinitionAbsolutePathId != parserModel.AbsolutePathId)
                     {
@@ -1277,12 +1286,17 @@ public static partial class Parser
                     new Symbol(
                         SyntaxKind.FunctionSymbol,
                         parserModel.GetNextSymbolId(),
-                        functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan with
-                        {
-                            DecorationByte = (byte)GenericDecorationKind.Function
-                        }));
+                        functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan.StartInclusiveIndex,
+                        functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan.EndExclusiveIndex,
+                        functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan.ByteIndex));
                 ++parserModel.Compilation.SymbolLength;
-                
+
+
+                parserModel.Binder.TextEditorService.LEXER_miscTextSpanList.Add(functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan with
+                {
+                    DecorationByte = (byte)GenericDecorationKind.Function
+                });
+
                 // TODO: Method groups
 
                 result = functionInvocationNode;
@@ -1345,7 +1359,9 @@ public static partial class Parser
                         new Symbol(
                             SyntaxKind.NamespaceSymbol,
                             parserModel.GetNextSymbolId(),
-                            ambiguousIdentifierNode.Token.TextSpan));
+                            ambiguousIdentifierNode.Token.TextSpan.StartInclusiveIndex,
+                            ambiguousIdentifierNode.Token.TextSpan.EndExclusiveIndex,
+                            ambiguousIdentifierNode.Token.TextSpan.ByteIndex));
                     ++parserModel.Compilation.SymbolLength;
                 }
                 else
@@ -2524,7 +2540,7 @@ public static partial class Parser
         
             parserModel.Binder.SymbolList.Insert(
                 parserModel.Compilation.SymbolOffset + parserModel.Compilation.SymbolLength,
-                new Symbol(SyntaxKind.LambdaSymbol, parserModel.GetNextSymbolId(), textSpan));
+                new Symbol(SyntaxKind.LambdaSymbol, parserModel.GetNextSymbolId(), textSpan.StartInclusiveIndex, textSpan.EndExclusiveIndex, textSpan.ByteIndex));
             ++parserModel.Compilation.SymbolLength;
         
             if (parserModel.TokenWalker.Next.SyntaxKind == SyntaxKind.OpenBraceToken)
@@ -3720,12 +3736,17 @@ public static partial class Parser
                     new Symbol(
                         SyntaxKind.FunctionSymbol,
                         symbolId,
-                        functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan with
-                        {
-                            DecorationByte = (byte)GenericDecorationKind.Function
-                        }));
+                        functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan.StartInclusiveIndex,
+                        functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan.EndExclusiveIndex,
+                        functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan.ByteIndex));
                 ++parserModel.Compilation.SymbolLength;
-                
+
+
+                parserModel.Binder.TextEditorService.LEXER_miscTextSpanList.Add(functionInvocationNode.FunctionInvocationIdentifierToken.TextSpan with
+                {
+                    DecorationByte = (byte)GenericDecorationKind.Function
+                });
+
                 if (parserModel.Binder.SymbolIdToExternalTextSpanMap.TryGetValue(parserModel.AbsolutePathId, out var symbolIdToExternalTextSpanMap))
                 {
                     symbolIdToExternalTextSpanMap.TryAdd(

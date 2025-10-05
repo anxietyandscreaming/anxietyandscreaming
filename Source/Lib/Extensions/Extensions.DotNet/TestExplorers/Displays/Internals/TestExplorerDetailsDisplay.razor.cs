@@ -187,12 +187,15 @@ public partial class TestExplorerDetailsDisplay : ComponentBase, IDisposable
                     terminalResource.CompilationUnit.ManualDecorationTextSpanList.Clear();
                     terminalResource.CompilationUnit.ManualDecorationTextSpanList.AddRange(newDecorationTextSpanList);
 
+                    /*
+                    // 2025-05-10
                     editContext.TextEditorService.Model_ApplySyntaxHighlighting(
                         editContext,
                         modelModifier,
                         terminalResource.CompilationUnit.SyntaxTokenList.Select(x => x.TextSpan)
                             .Concat(terminalResource.CompilationUnit.ManualDecorationTextSpanList)
                             .Concat(terminalResource.CompilationUnit.ManualSymbolList.Select(x => x.TextSpan)));
+                    */
                 }
 
                 return ValueTask.CompletedTask;

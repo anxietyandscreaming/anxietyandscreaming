@@ -122,7 +122,7 @@
 		{
 			returnTypeClauseNode = default;
 			returnTypeClauseNodeText = null;
-			methodName = syntaxViewModelLocal.GetTextFromTextSpan(syntaxViewModelLocal.TargetSymbol.TextSpan);
+			methodName = syntaxViewModelLocal.GetTextFromSymbol(syntaxViewModelLocal.TargetSymbol);
 			hasGenericParameterListing = false;
 			offsetFunctionArgumentEntryList = -1;
     		lengthFunctionArgumentEntryList = 0;
@@ -130,7 +130,7 @@
 		else if (syntaxViewModelLocal.TargetSymbol.SyntaxKind == SyntaxKind.ConstructorSymbol)
 		{
 			returnTypeClauseNode = default;
-			returnTypeClauseNodeText = syntaxViewModelLocal.GetTextFromTextSpan(syntaxViewModelLocal.TargetSymbol.TextSpan);
+			returnTypeClauseNodeText = syntaxViewModelLocal.GetTextFromSymbol(syntaxViewModelLocal.TargetSymbol);
 			methodName = null;
 			hasGenericParameterListing = false;
 			offsetFunctionArgumentEntryList = -1;

@@ -1075,8 +1075,8 @@ public partial class CSharpBinder
         
         foreach (var symbol in symbolList)
         {
-            if (textSpan.StartInclusiveIndex >= symbol.TextSpan.StartInclusiveIndex &&
-                textSpan.StartInclusiveIndex < symbol.TextSpan.EndExclusiveIndex)
+            if (textSpan.StartInclusiveIndex >= symbol.StartInclusiveIndex &&
+                textSpan.StartInclusiveIndex < symbol.EndExclusiveIndex)
             {
                 foundSymbol = symbol;
                 break;

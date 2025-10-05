@@ -1041,8 +1041,8 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
             {
                 foreach (var symbol in symbols)
                 {
-                    if (operatingWordAmongPositionIndex >= symbol.TextSpan.StartInclusiveIndex &&
-                        operatingWordAmongPositionIndex < symbol.TextSpan.EndExclusiveIndex)
+                    if (operatingWordAmongPositionIndex >= symbol.StartInclusiveIndex &&
+                        operatingWordAmongPositionIndex < symbol.EndExclusiveIndex)
                     {
                         foundMatch = true;
                         foundSymbol = symbol;
@@ -1058,7 +1058,7 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
                 var extendedCompilerService = (IExtendedCompilerService)textEditorModel.PersistentState.CompilerService;
                 var compilerServiceResource = extendedCompilerService.GetResourceByResourceUri(textEditorModel.PersistentState.ResourceUri);
         
-                var definitionNode = extendedCompilerService.GetDefinitionNodeValue(foundSymbol.TextSpan, virtualizationResultAbsolutePathId, compilerServiceResource, foundSymbol);
+                var definitionNode = extendedCompilerService.GetDefinitionNodeValue(foundSymbol.ToTextSpan(), virtualizationResultAbsolutePathId, compilerServiceResource, foundSymbol);
                 
                 if (!definitionNode.IsDefault())
                 {
@@ -1196,8 +1196,8 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
                         {
                             foreach (var symbol in symbols)
                             {
-                                if (typeReference.ExplicitDefinitionTextSpan.StartInclusiveIndex >= symbol.TextSpan.StartInclusiveIndex &&
-                                    typeReference.ExplicitDefinitionTextSpan.StartInclusiveIndex < symbol.TextSpan.EndExclusiveIndex)
+                                if (typeReference.ExplicitDefinitionTextSpan.StartInclusiveIndex >= symbol.StartInclusiveIndex &&
+                                    typeReference.ExplicitDefinitionTextSpan.StartInclusiveIndex < symbol.EndExclusiveIndex)
                                 {
                                     innerFoundSymbol = symbol;
                                     break;
@@ -1210,7 +1210,7 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
                             var maybeTypeDefinitionNode = __CSharpBinder.GetDefinitionNodeValue(
                                 innerAbsolutePathId,
                                 innerCompilationUnit,
-                                innerFoundSymbol.TextSpan,
+                                innerFoundSymbol.ToTextSpan(),
                                 syntaxKind: innerFoundSymbol.SyntaxKind,
                                 symbol: innerFoundSymbol);
                             
@@ -1503,8 +1503,8 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
             {
                 var symbol = __CSharpBinder.SymbolList[i];
                 
-                if (cursorPositionIndex >= symbol.TextSpan.StartInclusiveIndex &&
-                    cursorPositionIndex < symbol.TextSpan.EndExclusiveIndex)
+                if (cursorPositionIndex >= symbol.ToTextSpan().StartInclusiveIndex &&
+                    cursorPositionIndex < symbol.ToTextSpan().EndExclusiveIndex)
                 {
                     foundMatch = true;
 
@@ -1690,8 +1690,8 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
         
         foreach (var symbol in symbolList)
         {
-            if (cursorPositionIndex >= symbol.TextSpan.StartInclusiveIndex &&
-                cursorPositionIndex < symbol.TextSpan.EndExclusiveIndex)
+            if (cursorPositionIndex >= symbol.StartInclusiveIndex &&
+                cursorPositionIndex < symbol.EndExclusiveIndex)
             {
                 foundMatch = true;
                 foundSymbol = symbol;
@@ -2053,9 +2053,12 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
             
             if (shouldApplySyntaxHighlighting)
             {
+                /*
+                // 2025-05-10
                 TextEditorService.LEXER_miscTextSpanList.AddRange(
-                    __CSharpBinder.SymbolList.Skip(cSharpCompilationUnit.SymbolOffset).Take(cSharpCompilationUnit.SymbolLength).Select(x => x.TextSpan));
-                    
+                    __CSharpBinder.SymbolList.Skip(cSharpCompilationUnit.SymbolOffset).Take(cSharpCompilationUnit.SymbolLength).Select(x => x.ToTextSpan()));
+                */    
+
                 editContext.TextEditorService.Model_ApplySyntaxHighlighting(
                     editContext,
                     modelModifier,
