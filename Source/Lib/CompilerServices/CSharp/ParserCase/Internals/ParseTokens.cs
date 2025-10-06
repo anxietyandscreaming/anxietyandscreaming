@@ -446,7 +446,7 @@ public static partial class Parser
         {
             if (!parserModel.ScopeCurrent.PermitCodeBlockParsing)
             {
-                parserModel.TokenWalker.DeferParsingOfChildScope(ref parserModel);
+                parserModel.TokenWalker.DeferParsingOfChildScope(openBraceToken, ref parserModel);
                 return;
             }
 
@@ -480,7 +480,7 @@ public static partial class Parser
             if (tuple.ScopeSubIndex == parserModel.ScopeCurrentSubIndex)
             {
                 tuple = parserModel.ParseChildScopeStack.Pop();
-                tuple.DeferredChildScope.PrepareMainParserLoop(closeBraceTokenIndex, ref parserModel);
+                tuple.DeferredChildScope.PrepareMainParserLoop(closeBraceTokenIndex, closeBraceToken, ref parserModel);
                 return;
             }
         }
@@ -651,7 +651,7 @@ public static partial class Parser
     
     public static void MoveToExpressionBody(ref CSharpParserState parserModel)
     {
-        _ = parserModel.TokenWalker.Consume(); // Consume 'EqualsCloseAngleBracketToken'
+        var equalsCloseAngleBracketToken = parserModel.TokenWalker.Consume();
     
         parserModel.SetCurrentScope_IsImplicitOpenCodeBlockTextSpan(true);
         
@@ -664,7 +664,7 @@ public static partial class Parser
         {
             if (!parserModel.ScopeCurrent.PermitCodeBlockParsing)
             {
-                parserModel.TokenWalker.DeferParsingOfChildScope(ref parserModel);
+                parserModel.TokenWalker.DeferParsingOfChildScope(equalsCloseAngleBracketToken, ref parserModel);
                 return;
             }
 

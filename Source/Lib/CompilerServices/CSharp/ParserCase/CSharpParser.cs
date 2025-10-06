@@ -167,7 +167,10 @@ public static class CSharpParser
                     if (tuple.ScopeSubIndex == parserModel.ScopeCurrentSubIndex)
                     {
                         tuple = parserModel.ParseChildScopeStack.Pop();
-                        tuple.DeferredChildScope.PrepareMainParserLoop(parserModel.TokenWalker.Index, ref parserModel);
+                        tuple.DeferredChildScope.PrepareMainParserLoop(
+                            parserModel.TokenWalker.Index,
+                            parserModel.TokenWalker.Current,
+                            ref parserModel);
                         deferredParsingOccurred = true;
                     }
                 }
