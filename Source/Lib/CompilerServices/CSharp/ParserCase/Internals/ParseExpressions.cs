@@ -27,9 +27,8 @@ public static partial class Parser
         var forceExit = false;
         
         var indexTokenRoot = parserModel.TokenWalker.Index;
-        var byteTokenRoot = parserModel.TokenWalker.Current.TextSpan.ByteIndex;
-        var startPositionTokenRoot = parserModel.TokenWalker.Current.TextSpan.StartInclusiveIndex;
-        var lengthTokenRoot = parserModel.TokenWalker.Current.TextSpan.Length;
+        var tokenRoot = parserModel.TokenWalker.Current;
+        var rootConsumeCounter = parserModel.TokenWalker.ConsumeCounter;
         var expressionPrimaryPreviousRoot = parserModel.ExpressionPrimary;
         
         while (true)
@@ -200,9 +199,8 @@ public static partial class Parser
                     {
                         expressionPrimaryPreviousRoot = parserModel.ExpressionPrimary;
                         indexTokenRoot = parserModel.TokenWalker.Index;
-                        byteTokenRoot = parserModel.TokenWalker.Current.TextSpan.ByteIndex;
-                        startPositionTokenRoot = parserModel.TokenWalker.Current.TextSpan.StartInclusiveIndex;
-                        lengthTokenRoot = parserModel.TokenWalker.Current.TextSpan.Length;
+                        rootConsumeCounter = parserModel.TokenWalker.ConsumeCounter;
+                        tokenRoot = parserModel.TokenWalker.Current;
                     }
                 }
                 else
@@ -218,7 +216,7 @@ public static partial class Parser
                     {
                         parserModel.TokenWalker.BacktrackNoReturnValue();
                     }*/
-                    parserModel.TokenWalker.Seek_SeekOriginBegin(byteTokenRoot, startPositionTokenRoot, lengthTokenRoot, indexTokenRoot);
+                    parserModel.TokenWalker.Seek_SeekOriginBegin(tokenRoot, indexTokenRoot, rootConsumeCounter);
                     
                     if (parserModel.ExpressionPrimary.SyntaxKind == SyntaxKind.FunctionInvocationNode)
                     {

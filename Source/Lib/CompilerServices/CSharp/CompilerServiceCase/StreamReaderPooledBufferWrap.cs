@@ -67,6 +67,8 @@ public class StreamReaderPooledBufferWrap
 
         LastReadCharacterCount = 1;
 
+        _ = ReadCharacter();    
+
         _streamPositionIndex = startPositionIndex;
         _streamByteIndex = byteIndex;
         
@@ -74,6 +76,10 @@ public class StreamReaderPooledBufferWrap
         {
             _ = ReadCharacter();
         }
+        
+        _backtrackTuple = default;
+        
+        //Console.WriteLine();
     }
 
     private char[] _streamReaderCharBuffer = new char[1];

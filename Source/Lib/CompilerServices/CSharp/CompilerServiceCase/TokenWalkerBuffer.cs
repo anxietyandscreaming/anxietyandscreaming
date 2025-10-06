@@ -176,12 +176,13 @@ public class TokenWalkerBuffer
     }
     
     /// <summary>WARNING: code duplication in 'ReInitialize(...)'</summary>
-    public void Seek_SeekOriginBegin(int byteIndex, int startPositionIndex, int characterLength, int tokenIndex)
+    public void Seek_SeekOriginBegin(SyntaxToken token, int tokenIndex, int rootConsumeCounter)
     {
-        StreamReaderWrap.Unsafe_Seek_SeekOriginBegin(byteIndex, startPositionIndex, characterLength);
+        StreamReaderWrap.Unsafe_Seek_SeekOriginBegin(token.TextSpan.ByteIndex, token.TextSpan.StartInclusiveIndex, token.TextSpan.Length);
         
+        _syntaxTokenBuffer[0] = token;
         _index = tokenIndex;
-        ConsumeCounter = 0;
+        ConsumeCounter = rootConsumeCounter;
         _deferredParsingTuple = (-1, -1, -1);
         _deferredParsingTupleStack.Clear();
 
