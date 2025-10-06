@@ -35,14 +35,6 @@ public class TokenWalkerBuffer
     /// <summary>Trust that ReInitialize(/*...*/) will be invoked is presumed here.</summary>
     private CSharpBinder _binder = null!;
 
-    public void MiscTextSpanListAdd(TextEditorTextSpan textSpan)
-    {
-        if (TextEditorModel is null)
-            return;
-
-        TextEditorModel.ApplySyntaxHighlightingByTextSpan(textSpan);
-    }
-
     public TextEditorModel? TextEditorModel { get; private set; }
 
     public int ConsumeCounter { get; private set; }
@@ -229,7 +221,7 @@ public class TokenWalkerBuffer
                 StreamReaderWrap,
                 ref _previousEscapeCharacterTextSpan,
                 ref _interpolatedExpressionUnmatchedBraceCount);
-            MiscTextSpanListAdd(_syntaxTokenBuffer[0].TextSpan);
+            TextEditorModel?.ApplySyntaxHighlightingByTextSpan(_syntaxTokenBuffer[0].TextSpan);
             
             
         }
@@ -318,7 +310,7 @@ public class TokenWalkerBuffer
                                 StreamReaderWrap,
                                 ref _previousEscapeCharacterTextSpan,
                                 ref _interpolatedExpressionUnmatchedBraceCount);
-                            MiscTextSpanListAdd(_syntaxTokenBuffer[0].TextSpan);
+                            TextEditorModel?.ApplySyntaxHighlightingByTextSpan(_syntaxTokenBuffer[0].TextSpan);
                             return _syntaxTokenBuffer[0];
                         }
                     }
@@ -345,7 +337,7 @@ public class TokenWalkerBuffer
                 StreamReaderWrap,
                 ref _previousEscapeCharacterTextSpan,
                 ref _interpolatedExpressionUnmatchedBraceCount);
-            MiscTextSpanListAdd(_syntaxTokenBuffer[0].TextSpan);
+            TextEditorModel?.ApplySyntaxHighlightingByTextSpan(_syntaxTokenBuffer[0].TextSpan);
         }
 
         // TODO: Peek EOF

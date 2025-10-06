@@ -616,7 +616,7 @@ public static class CSharpLexer
         }
         
         previousEscapeCharacterTextSpan = textSpan;
-        tokenWalkerBuffer.MiscTextSpanListAdd(textSpan);
+        tokenWalkerBuffer.TextEditorModel?.ApplySyntaxHighlightingByTextSpan(textSpan);
     }
     
     public static SyntaxToken LexIdentifierOrKeywordOrKeywordContextual(CSharpBinder binder, TokenWalkerBuffer tokenWalkerBuffer, StreamReaderPooledBufferWrap streamReaderWrap)
@@ -2229,7 +2229,7 @@ public static class CSharpLexer
             }
             else if (streamReaderWrap.CurrentCharacter == escapeCharacter)
             {
-                tokenWalkerBuffer.MiscTextSpanListAdd(new TextEditorTextSpan(
+                tokenWalkerBuffer.TextEditorModel?.ApplySyntaxHighlightingByTextSpan(new TextEditorTextSpan(
                     streamReaderWrap.PositionIndex,
                     streamReaderWrap.PositionIndex + 2,
                     (byte)GenericDecorationKind.EscapeCharacterPrimary,
@@ -2284,7 +2284,7 @@ public static class CSharpLexer
             (byte)GenericDecorationKind.CommentSingleLine,
             byteEntryIndex);
 
-        tokenWalkerBuffer.MiscTextSpanListAdd(textSpan);
+        tokenWalkerBuffer.TextEditorModel?.ApplySyntaxHighlightingByTextSpan(textSpan);
     }
     
     public static void LexCommentMultiLineToken(TokenWalkerBuffer tokenWalkerBuffer, StreamReaderPooledBufferWrap streamReaderWrap)
@@ -2326,7 +2326,7 @@ public static class CSharpLexer
             (byte)GenericDecorationKind.CommentMultiLine,
             byteEntryIndex);
 
-        tokenWalkerBuffer.MiscTextSpanListAdd(textSpan);
+        tokenWalkerBuffer.TextEditorModel?.ApplySyntaxHighlightingByTextSpan(textSpan);
     }
     
     public static SyntaxToken LexPreprocessorDirectiveToken(TokenWalkerBuffer tokenWalkerBuffer, StreamReaderPooledBufferWrap streamReaderWrap)
