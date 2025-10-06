@@ -499,9 +499,8 @@ public ref partial struct CSharpParserState
         var parentScopeDirection = parent.IsDefault()
             ? ScopeDirectionKind.Both
             : parent.ScopeDirectionKind;
-        /* #2025-09-28_Disable_PermitCodeBlockParsing
         if (parentScopeDirection == ScopeDirectionKind.Both)
-            scope.PermitCodeBlockParsing = false;*/
+            scope.PermitCodeBlockParsing = false;
         
         scope.NodeSubIndex = -1;
         
@@ -1410,10 +1409,9 @@ public ref partial struct CSharpParserState
     
     public readonly void SetCurrentScope_PermitCodeBlockParsing(bool value)
     {
-        /* #2025-09-28_Disable_PermitCodeBlockParsing
         var scope = Binder.ScopeList[Compilation.ScopeOffset + ScopeCurrentSubIndex];
         scope.PermitCodeBlockParsing = value;
-        Binder.ScopeList[Compilation.ScopeOffset + ScopeCurrentSubIndex] = scope; */
+        Binder.ScopeList[Compilation.ScopeOffset + ScopeCurrentSubIndex] = scope;
     }
     
     public readonly void SetCurrentScope_Scope_EndExclusiveIndex(int endExclusiveIndex)
