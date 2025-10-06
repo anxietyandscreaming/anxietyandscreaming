@@ -27,6 +27,9 @@ public static partial class Parser
         var forceExit = false;
         
         var indexTokenRoot = parserModel.TokenWalker.Index;
+        var byteTokenRoot = parserModel.TokenWalker.Current.TextSpan.ByteIndex;
+        var startPositionTokenRoot = parserModel.TokenWalker.Current.TextSpan.StartInclusiveIndex;
+        var lengthTokenRoot = parserModel.TokenWalker.Current.TextSpan.Length;
         var expressionPrimaryPreviousRoot = parserModel.ExpressionPrimary;
         
         while (true)
@@ -197,6 +200,9 @@ public static partial class Parser
                     {
                         expressionPrimaryPreviousRoot = parserModel.ExpressionPrimary;
                         indexTokenRoot = parserModel.TokenWalker.Index;
+                        byteTokenRoot = parserModel.TokenWalker.Current.TextSpan.ByteIndex;
+                        startPositionTokenRoot = parserModel.TokenWalker.Current.TextSpan.StartInclusiveIndex;
+                        lengthTokenRoot = parserModel.TokenWalker.Current.TextSpan.Length;
                     }
                 }
                 else
@@ -206,12 +212,13 @@ public static partial class Parser
                 
                 if (!success)
                 {
-                    var distance = parserModel.TokenWalker.Index - indexTokenRoot;
+                    /*var distance = parserModel.TokenWalker.Index - indexTokenRoot;
                     
                     for (int i = 0; i < distance; i++)
                     {
                         parserModel.TokenWalker.BacktrackNoReturnValue();
-                    }
+                    }*/
+                    parserModel.TokenWalker.Seek_SeekOriginBegin(byteTokenRoot, startPositionTokenRoot, lengthTokenRoot, indexTokenRoot);
                     
                     if (parserModel.ExpressionPrimary.SyntaxKind == SyntaxKind.FunctionInvocationNode)
                     {

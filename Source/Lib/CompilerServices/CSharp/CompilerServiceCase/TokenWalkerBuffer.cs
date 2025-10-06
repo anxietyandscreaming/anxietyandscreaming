@@ -130,6 +130,8 @@ public class TokenWalkerBuffer
     /// <summary>
     /// ReInitialize must be invoked at the start of every "new usage" of the pooled instance.
     /// This invocation having occurred is NOT asserted, so neglecting to invoke it is undefined behavior.
+    ///
+    /// WARNING: code duplication in 'Seek_SeekOriginBegin(...)'
     /// </summary>
     public void ReInitialize(
         CSharpBinder binder,
@@ -171,6 +173,35 @@ public class TokenWalkerBuffer
         // Incase the implementation details of 'Consume' ever change just explicitly invoke it so the changes reflect here too.
         _ = Consume();
         ConsumeCounterReset();
+    }
+    
+    /// <summary>WARNING: code duplication in 'ReInitialize(...)'</summary>
+    public void Seek_SeekOriginBegin(int byteIndex, int startPositionIndex, int characterLength, int tokenIndex)
+    {
+        StreamReaderWrap.Unsafe_Seek_SeekOriginBegin(byteIndex, startPositionIndex, characterLength);
+        
+        _index = tokenIndex;
+        ConsumeCounter = 0;
+        _deferredParsingTuple = (-1, -1, -1);
+        _deferredParsingTupleStack.Clear();
+
+        _previousEscapeCharacterTextSpan = new TextEditorTextSpan(
+            0,
+            0,
+            (byte)GenericDecorationKind.None);
+            
+        _interpolatedExpressionUnmatchedBraceCount = -1;
+        
+        // You probably don't have to set these to default because they just get overwritten when the time comes.
+        // But I'm unsure, and there is far more valuable changes to be made so I'm just gonna set them to default.
+        _peekBuffer[0] = default;
+        _peekBuffer[1] = default;
+        _peekBuffer[2] = default;
+
+        _peekIndex = -1;
+        _peekSize = 0;
+
+        _backtrackTuple = default;
     }
 
     public SyntaxToken Consume()

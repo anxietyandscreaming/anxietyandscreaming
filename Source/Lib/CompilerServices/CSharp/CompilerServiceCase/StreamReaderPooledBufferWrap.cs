@@ -1,4 +1,4 @@
-﻿using Clair.TextEditor.RazorLib.Exceptions;
+using Clair.TextEditor.RazorLib.Exceptions;
 
 namespace Clair.CompilerServices.CSharp.CompilerServiceCase;
 
@@ -14,6 +14,9 @@ public class StreamReaderPooledBufferWrap
         StreamReader.Read(_streamReaderCharBuffer);
     }
 
+    /// <summary>
+    /// WARNING: code duplication in 'ReInitialize(...)'
+    /// </summary>
     public void ReInitialize(StreamReaderPooledBuffer streamReader)
     {
         // You probably don't have to set these to default because they just get overwritten when the time comes.
@@ -35,6 +38,42 @@ public class StreamReaderPooledBufferWrap
         _streamByteIndex = default;
 
         StreamReader.Read(_streamReaderCharBuffer);
+    }
+    
+    /// <summary>
+    /// This is "Unsafe_" because you likely have a TokenWalkerBuffer that wraps 'this'.
+    /// If so you should invoke 'TokenWalkerBuffer.Seek_SeekOriginBegin(...)'
+    /// in order to keep everything in sync.
+    ///
+    /// The TokenWalkerBuffer will in turn invoke this method internally.
+    ///
+    /// WARNING: code duplication in 'ReInitialize(...)'
+    /// </summary>
+    public void Unsafe_Seek_SeekOriginBegin(int byteIndex, int startPositionIndex, int characterLength)
+    {
+        StreamReader.BaseStream.Seek(byteIndex, SeekOrigin.Begin);
+        StreamReader.DiscardBufferedData();
+        
+        // You probably don't have to set these to default because they just get overwritten when the time comes.
+        // But I'm unsure, and there is far more valuable changes to be made so I'm just gonna set them to default.
+        _peekBuffer[0] = default;
+        _peekBuffer[1] = default;
+        _peekBuffer[2] = default;
+
+        _peekIndex = -1;
+        _peekSize = 0;
+
+        _backtrackTuple = default;
+
+        LastReadCharacterCount = 1;
+
+        _streamPositionIndex = startPositionIndex;
+        _streamByteIndex = byteIndex;
+        
+        for (int i = 0; i < characterLength; i++)
+        {
+            _ = ReadCharacter();
+        }
     }
 
     private char[] _streamReaderCharBuffer = new char[1];
