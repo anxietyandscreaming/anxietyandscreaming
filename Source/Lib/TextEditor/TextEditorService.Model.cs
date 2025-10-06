@@ -238,6 +238,7 @@ public partial class TextEditorService
             }
         }
 
+        modelModifier.__SetPartitionListChanged(true);
         modelModifier.ShouldCalculateVirtualizationResult = true;
     }
 
@@ -289,6 +290,7 @@ public partial class TextEditorService
         }
 
         // TODO: Why does painting reload virtualization result???
+        modelModifier.__SetPartitionListChanged(true);
         modelModifier.ShouldCalculateVirtualizationResult = true;
     }
     #endregion
