@@ -2485,7 +2485,12 @@ public sealed class TextEditorModel
         inPartition.RichCharacterList[relativePositionIndex] = new(
             targetRichCharacter.Value,
             decorationByte);
-        _partitionListChanged = true;
+        //_partitionListChanged = false;
+    }
+    
+    public void __SetPartitionListChanged(bool value)
+    {
+        _partitionListChanged = value;
     }
 
     public void __RemoveAt(int globalPositionIndex)
