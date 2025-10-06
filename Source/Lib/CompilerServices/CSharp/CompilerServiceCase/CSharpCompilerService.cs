@@ -334,7 +334,6 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
                 sr.Read();
 
                 sr.BaseStream.Seek(textSpan.ByteIndex, SeekOrigin.Begin);
-                // sr.BaseStream.Seek(textSpan.ByteIndex, SeekOrigin.Begin);
                 sr.DiscardBufferedData();
 
                 _unsafeGetTextStringBuilder.Clear();
@@ -376,7 +375,6 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
         {
             // TODO: What happens if I split a multibyte word?
             FastParseTuple.Sr.BaseStream.Seek(textSpan.ByteIndex, SeekOrigin.Begin);
-            // sr.BaseStream.Seek(textSpan.ByteIndex, SeekOrigin.Begin);
             FastParseTuple.Sr.DiscardBufferedData();
 
             _safeGetTextStringBuilder.Clear();
@@ -551,7 +549,6 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
 
         // TODO: What happens if I split a multibyte word?
         sr.BaseStream.Seek(textSpan.ByteIndex, SeekOrigin.Begin);
-        // sr.BaseStream.Seek(textSpan.ByteIndex, SeekOrigin.Begin);
         sr.DiscardBufferedData();
 
         for (int i = 0; i < textSpan.Length; i++)
