@@ -162,14 +162,10 @@ public static class CSharpParser
                 
                 if (parserModel.ParseChildScopeStack.Count > 0)
                 {
-                    Console.WriteLine("EOF => if (parserModel.ParseChildScopeStack.Count > 0)");
-                
                     var tuple = parserModel.ParseChildScopeStack.Peek();
                     
                     if (tuple.ScopeSubIndex == parserModel.ScopeCurrentSubIndex)
                     {
-                        Console.WriteLine("EOF => if (tuple.ScopeSubIndex == parserModel.ScopeCurrentSubIndex)");
-                    
                         tuple = parserModel.ParseChildScopeStack.Pop();
                         tuple.DeferredChildScope.PrepareMainParserLoop(
                             parserModel.TokenWalker.Index,
