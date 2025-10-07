@@ -469,7 +469,8 @@ public class TokenWalkerBuffer
         int restoreTokenIndex,
         SyntaxToken restoreToken)
     {
-        _index = openTokenIndex;
+        Seek_SeekOriginBegin(openToken, openTokenIndex, 1);
+    
         _deferredParsingTuple = (
             openTokenIndex,
             openToken,
@@ -478,7 +479,6 @@ public class TokenWalkerBuffer
             restoreTokenIndex,
             restoreToken);
         _deferredParsingTupleStack.Push(_deferredParsingTuple);
-        ConsumeCounter++;
     }
 
     public void SetNullDeferredParsingTuple()
@@ -499,17 +499,23 @@ public class TokenWalkerBuffer
     
     public void DeferParsingOfChildScope(SyntaxToken openToken, ref CSharpParserState parserModel)
     {
+        
+    
         // Pop off the 'TypeDefinitionNode', then push it back on when later dequeued.
         var deferredScope = parserModel.ScopeCurrent;
 
         parserModel.ScopeCurrentSubIndex = deferredScope.ParentScopeSubIndex;
 
         var openTokenIndex = Index - 1;
+        
+        Console.WriteLine(nameof(DeferParsingOfChildScope) + openTokenIndex);
 
         var openBraceCounter = 1;
 
         int closeTokenIndex;
         SyntaxToken closeToken;
+        
+        Console.WriteLine(deferredScope.IsImplicitOpenCodeBlockTextSpan);
 
         if (deferredScope.IsImplicitOpenCodeBlockTextSpan)
         {
@@ -559,6 +565,8 @@ public class TokenWalkerBuffer
         {
             return;
         }
+        
+        Console.WriteLine(closeTokenIndex);
 
         parserModel.ParseChildScopeStack.Push(
             (

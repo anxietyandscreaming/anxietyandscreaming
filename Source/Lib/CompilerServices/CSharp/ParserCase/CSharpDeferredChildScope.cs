@@ -26,8 +26,17 @@ public struct CSharpDeferredChildScope
     
     public readonly void PrepareMainParserLoop(int restoreTokenIndex, SyntaxToken restoreToken, ref CSharpParserState parserModel)
     {
+        Console.WriteLine(nameof(PrepareMainParserLoop));
+    
         parserModel.ScopeCurrentSubIndex = ScopeSubIndex;
         parserModel.SetCurrentScope_PermitCodeBlockParsing(true);
+        
+        Console.WriteLine($"OpenTokenIndex:{OpenTokenIndex}");
+        Console.WriteLine($"OpenToken:{OpenToken}");
+        Console.WriteLine($"CloseTokenIndex:{CloseTokenIndex}");
+        Console.WriteLine($"CloseToken:{CloseToken}");
+        Console.WriteLine($"restoreTokenIndex:{restoreTokenIndex}");
+        Console.WriteLine($"restoreToken:{restoreToken}");
         
         parserModel.TokenWalker.DeferredParsing(
             OpenTokenIndex,

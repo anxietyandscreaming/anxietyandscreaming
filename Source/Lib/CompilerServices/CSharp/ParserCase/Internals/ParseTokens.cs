@@ -410,6 +410,8 @@ public static partial class Parser
 
     public static void ParseOpenBraceToken(ref CSharpParserState parserModel)
     {
+        Console.WriteLine("anything");
+    
         var openBraceToken = parserModel.TokenWalker.Consume();
         
         if (parserModel.ScopeCurrent.IsImplicitOpenCodeBlockTextSpan ||
