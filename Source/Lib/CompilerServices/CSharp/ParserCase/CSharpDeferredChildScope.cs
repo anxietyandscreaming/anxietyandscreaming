@@ -26,6 +26,8 @@ public struct CSharpDeferredChildScope
     
     public readonly void PrepareMainParserLoop(int restoreTokenIndex, SyntaxToken restoreToken, ref CSharpParserState parserModel)
     {
+        // Console.WriteLine($"set_{ScopeSubIndex} => (restore_{restoreTokenIndex}, restore_{restoreToken.SyntaxKind}, ...)");
+        
         parserModel.ScopeCurrentSubIndex = ScopeSubIndex;
         parserModel.SetCurrentScope_PermitCodeBlockParsing(true);
         

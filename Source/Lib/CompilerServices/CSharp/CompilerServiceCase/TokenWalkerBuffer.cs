@@ -146,6 +146,9 @@ public class TokenWalkerBuffer
             }
         }
     }
+    
+    public bool IsCloseTokenIndex => _deferredParsingTuple.closeTokenIndex != -1 &&
+                                     Index == _deferredParsingTuple.closeTokenIndex;
 
     /// <summary>
     /// ReInitialize must be invoked at the start of every "new usage" of the pooled instance.
@@ -203,8 +206,8 @@ public class TokenWalkerBuffer
         _syntaxTokenBuffer[0] = token;
         _index = tokenIndex;
         ConsumeCounter = rootConsumeCounter;
-        SetNullDeferredParsingTuple();
-        _deferredParsingTupleStack.Clear();
+        //SetNullDeferredParsingTuple();
+        //_deferredParsingTupleStack.Clear();
 
         _previousEscapeCharacterTextSpan = new TextEditorTextSpan(
             0,
@@ -224,27 +227,32 @@ public class TokenWalkerBuffer
 
         _backtrackTuple = default;
     }
+    
+    /// <summary>
+    /// Returns 'true' to indicate the method which invoked this should return.
+    /// </summary>
+    public SyntaxToken HandleDeferredParsingCloseTokenIndex()
+    {
+        _deferredParsingTupleStack.Pop();
+        
+        Seek_SeekOriginBegin(_deferredParsingTuple.restoreToken, _deferredParsingTuple.restoreTokenIndex, 1);
+
+        var closeChildScopeToken = _deferredParsingTuple.closeToken;
+
+        if (_deferredParsingTupleStack.Count > 0)
+            _deferredParsingTuple = _deferredParsingTupleStack.Peek();
+        else
+            SetNullDeferredParsingTuple();
+
+        return closeChildScopeToken;
+    }
 
     public SyntaxToken Consume()
     {
-        if (_deferredParsingTuple.closeTokenIndex != -1)
-        {
-            if (Index == _deferredParsingTuple.closeTokenIndex)
-            {
-                _deferredParsingTupleStack.Pop();
-                
-                Seek_SeekOriginBegin(_deferredParsingTuple.restoreToken, _deferredParsingTuple.restoreTokenIndex, 1);
-
-                var closeChildScopeToken = _deferredParsingTuple.closeToken;
-
-                if (_deferredParsingTupleStack.Count > 0)
-                    _deferredParsingTuple = _deferredParsingTupleStack.Peek();
-                else
-                    SetNullDeferredParsingTuple();
-
-                return closeChildScopeToken;
-            }
-        }
+        // Console.WriteLine($"c:{Index}-{Current.SyntaxKind} | {Index} == {_deferredParsingTuple.closeTokenIndex}");
+    
+        if (IsCloseTokenIndex)
+            return HandleDeferredParsingCloseTokenIndex();
     
         ++ConsumeCounter;
 
@@ -479,6 +487,8 @@ public class TokenWalkerBuffer
             restoreTokenIndex,
             restoreToken);
         _deferredParsingTupleStack.Push(_deferredParsingTuple);
+        
+        // Console.WriteLine(_deferredParsingTuple);
     }
 
     public void SetNullDeferredParsingTuple()
@@ -499,6 +509,8 @@ public class TokenWalkerBuffer
     
     public void DeferParsingOfChildScope(SyntaxToken openToken, ref CSharpParserState parserModel)
     {
+        // Console.WriteLine(">>>>>>>>>>>>");
+    
         // Pop off the 'TypeDefinitionNode', then push it back on when later dequeued.
         var deferredScope = parserModel.ScopeCurrent;
 
@@ -552,6 +564,8 @@ public class TokenWalkerBuffer
             closeToken = Current;
             _ = Match(SyntaxKind.CloseBraceToken);
         }
+        
+        // Console.WriteLine("<<<<<<<<<<<<");
 
         if (parserModel.Compilation.CompilationUnitKind == CompilationUnitKind.SolutionWide_DefinitionsOnly &&
             (deferredScope.OwnerSyntaxKind == SyntaxKind.FunctionDefinitionNode ||
