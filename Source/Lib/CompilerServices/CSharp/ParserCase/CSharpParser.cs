@@ -20,6 +20,8 @@ public static class CSharpParser
         in between Parse(...) invocations.
         */
         
+        // Console.WriteLine("\n========");
+        
         compilationUnit.ScopeOffset = binder.ScopeList.Count;
         compilationUnit.NamespaceContributionOffset = binder.NamespaceContributionList.Count;
 
@@ -49,7 +51,7 @@ public static class CSharpParser
         {
             // The last statement in this while loop is conditionally: '_ = parserModel.TokenWalker.Consume();'.
             // Knowing this to be the case is extremely important.
-
+            
             switch (parserModel.TokenWalker.Current.SyntaxKind)
             {
                 case SyntaxKind.NumericLiteralToken:
@@ -167,7 +169,10 @@ public static class CSharpParser
                     if (tuple.ScopeSubIndex == parserModel.ScopeCurrentSubIndex)
                     {
                         tuple = parserModel.ParseChildScopeStack.Pop();
-                        tuple.DeferredChildScope.PrepareMainParserLoop(parserModel.TokenWalker.Index, ref parserModel);
+                        tuple.DeferredChildScope.PrepareMainParserLoop(
+                            parserModel.TokenWalker.Index,
+                            parserModel.TokenWalker.Current,
+                            ref parserModel);
                         deferredParsingOccurred = true;
                     }
                 }
@@ -207,5 +212,7 @@ public static class CSharpParser
             parserModel.CloseScope(parserModel.TokenWalker.Current.TextSpan); // The current token here would be the EOF token.
 
         parserModel.Binder.FinalizeCompilationUnit(parserModel.AbsolutePathId, compilationUnit);
+        
+        // Console.WriteLine("========\n");
     }
 }

@@ -3388,7 +3388,7 @@ public static partial class Parser
         parserModel.TokenWalker.Consume(); // Skip the EqualsCloseAngleBracketToken
         
         var openTokenIndex = parserModel.TokenWalker.Index;
-        _ = parserModel.TokenWalker.Consume(); // openBraceToken
+        var openBraceToken = parserModel.TokenWalker.Consume();
 
         var openBraceCounter = 1;
         
@@ -3414,7 +3414,7 @@ public static partial class Parser
         CloseLambdaExpressionScope(lambdaExpressionNode, ref parserModel);
     
         var closeTokenIndex = parserModel.TokenWalker.Index;
-        _ = parserModel.TokenWalker.Match(SyntaxKind.CloseBraceToken);
+        var closeBraceToken = parserModel.TokenWalker.Match(SyntaxKind.CloseBraceToken);
 
         var nonLambdaScopeParentSubIndex = parserModel.ScopeCurrentSubIndex;
         while (parserModel.Binder.ScopeList[parserModel.Compilation.ScopeOffset + nonLambdaScopeParentSubIndex].OwnerSyntaxKind == SyntaxKind.LambdaExpressionNode)
@@ -3426,9 +3426,11 @@ public static partial class Parser
             (
                 nonLambdaScopeParentSubIndex,
                 new CSharpDeferredChildScope(
+                    lambdaScope.SelfScopeSubIndex,
                     openTokenIndex,
+                    openBraceToken,
                     closeTokenIndex,
-                    lambdaScope.SelfScopeSubIndex)
+                    closeBraceToken)
             ));
             
         return lambdaExpressionNode;

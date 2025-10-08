@@ -1,12 +1,13 @@
 using Clair.TextEditor.RazorLib.Exceptions;
 using Clair.TextEditor.RazorLib.Lexers.Models;
 using Clair.TextEditor.RazorLib.Decorations.Models;
+using Clair.TextEditor.RazorLib.CompilerServices;
+using Clair.TextEditor.RazorLib.TextEditors.Models;
 using Clair.Extensions.CompilerServices.Syntax;
 using Clair.Extensions.CompilerServices.Syntax.Utility;
 using Clair.CompilerServices.CSharp.LexerCase;
 using Clair.CompilerServices.CSharp.ParserCase;
 using Clair.CompilerServices.CSharp.BinderCase;
-using Clair.TextEditor.RazorLib.TextEditors.Models;
 
 namespace Clair.CompilerServices.CSharp.CompilerServiceCase;
 
@@ -22,7 +23,20 @@ public class TokenWalkerBuffer
     /// <summary>
     /// Use '-1' for each int value to indicate 'null' for the entirety of the _deferredParsingTuple;
     /// </summary>
-    private (int openTokenIndex, int closeTokenIndex, int tokenIndexToRestore) _deferredParsingTuple = (-1, -1, -1);
+    private (
+            int openTokenIndex,
+            SyntaxToken openToken,
+            int closeTokenIndex,
+            SyntaxToken closeToken,
+            int restoreTokenIndex,
+            SyntaxToken restoreToken)
+        _deferredParsingTuple = (
+            -1,
+            default,
+            -1,
+            default,
+            -1,
+            default);
 
     /// <summary>
     /// '-1' should not appear for any of the int values in the stack.
@@ -30,7 +44,13 @@ public class TokenWalkerBuffer
     ///
     /// If this stack is empty, them the cached Peek() result should be '(-1, -1, -1)'.
     /// </summary>
-    private Stack<(int openTokenIndex, int closeTokenIndex, int tokenIndexToRestore)>? _deferredParsingTupleStack = new();
+    private Stack<(
+            int openTokenIndex,
+            SyntaxToken openToken,
+            int closeTokenIndex,
+            SyntaxToken closeToken,
+            int restoreTokenIndex,
+            SyntaxToken restoreToken)>? _deferredParsingTupleStack = new();
     
     /// <summary>Trust that ReInitialize(/*...*/) will be invoked is presumed here.</summary>
     private CSharpBinder _binder = null!;
@@ -126,6 +146,9 @@ public class TokenWalkerBuffer
             }
         }
     }
+    
+    public bool IsCloseTokenIndex => _deferredParsingTuple.closeTokenIndex != -1 &&
+                                     Index == _deferredParsingTuple.closeTokenIndex;
 
     /// <summary>
     /// ReInitialize must be invoked at the start of every "new usage" of the pooled instance.
@@ -145,7 +168,7 @@ public class TokenWalkerBuffer
     
         _index = -1;
         ConsumeCounter = 0;
-        _deferredParsingTuple = (-1, -1, -1);
+        SetNullDeferredParsingTuple();
         _deferredParsingTupleStack.Clear();
 
         TextEditorModel = textEditorModel;
@@ -183,8 +206,8 @@ public class TokenWalkerBuffer
         _syntaxTokenBuffer[0] = token;
         _index = tokenIndex;
         ConsumeCounter = rootConsumeCounter;
-        _deferredParsingTuple = (-1, -1, -1);
-        _deferredParsingTupleStack.Clear();
+        //SetNullDeferredParsingTuple();
+        //_deferredParsingTupleStack.Clear();
 
         _previousEscapeCharacterTextSpan = new TextEditorTextSpan(
             0,
@@ -204,9 +227,33 @@ public class TokenWalkerBuffer
 
         _backtrackTuple = default;
     }
+    
+    /// <summary>
+    /// Returns 'true' to indicate the method which invoked this should return.
+    /// </summary>
+    public SyntaxToken HandleDeferredParsingCloseTokenIndex()
+    {
+        _deferredParsingTupleStack.Pop();
+        
+        Seek_SeekOriginBegin(_deferredParsingTuple.restoreToken, _deferredParsingTuple.restoreTokenIndex, 1);
+
+        var closeChildScopeToken = _deferredParsingTuple.closeToken;
+
+        if (_deferredParsingTupleStack.Count > 0)
+            _deferredParsingTuple = _deferredParsingTupleStack.Peek();
+        else
+            SetNullDeferredParsingTuple();
+
+        return closeChildScopeToken;
+    }
 
     public SyntaxToken Consume()
     {
+        // Console.WriteLine($"c:{Index}-{Current.SyntaxKind} | {Index} == {_deferredParsingTuple.closeTokenIndex}");
+    
+        if (IsCloseTokenIndex)
+            return HandleDeferredParsingCloseTokenIndex();
+    
         ++ConsumeCounter;
 
         var consumedToken = Current;
@@ -424,20 +471,35 @@ public class TokenWalkerBuffer
     /// </summary>
     public void DeferredParsing(
         int openTokenIndex,
+        SyntaxToken openToken,
         int closeTokenIndex,
-        int tokenIndexToRestore)
+        SyntaxToken closeToken,
+        int restoreTokenIndex,
+        SyntaxToken restoreToken)
     {
-        throw new NotImplementedException();
-        _index = openTokenIndex;
-        _deferredParsingTuple = (openTokenIndex, closeTokenIndex, tokenIndexToRestore);
-        _deferredParsingTupleStack.Push((openTokenIndex, closeTokenIndex, tokenIndexToRestore));
-        ConsumeCounter++;
+        Seek_SeekOriginBegin(openToken, openTokenIndex, 1);
+    
+        _deferredParsingTuple = (
+            openTokenIndex,
+            openToken,
+            closeTokenIndex,
+            closeToken,
+            restoreTokenIndex,
+            restoreToken);
+        _deferredParsingTupleStack.Push(_deferredParsingTuple);
+        
+        // Console.WriteLine(_deferredParsingTuple);
     }
 
     public void SetNullDeferredParsingTuple()
     {
-        throw new NotImplementedException();
-        _deferredParsingTuple = (-1, -1, -1);
+        _deferredParsingTuple = (
+            -1,
+            default,
+            -1,
+            default,
+            -1,
+            default);
     }
 
     public void ConsumeCounterReset()
@@ -445,9 +507,83 @@ public class TokenWalkerBuffer
         ConsumeCounter = 0;
     }
     
-    public void DeferParsingOfChildScope(ref CSharpParserState parserModel)
+    public void DeferParsingOfChildScope(SyntaxToken openToken, ref CSharpParserState parserModel)
     {
-        throw new NotImplementedException();
+        // Console.WriteLine(">>>>>>>>>>>>");
+    
+        // Pop off the 'TypeDefinitionNode', then push it back on when later dequeued.
+        var deferredScope = parserModel.ScopeCurrent;
+
+        parserModel.ScopeCurrentSubIndex = deferredScope.ParentScopeSubIndex;
+
+        var openTokenIndex = Index - 1;
+
+        var openBraceCounter = 1;
+
+        int closeTokenIndex;
+        SyntaxToken closeToken;
+
+        if (deferredScope.IsImplicitOpenCodeBlockTextSpan)
+        {
+            while (true)
+            {
+                if (IsEof)
+                    break;
+
+                if (Current.SyntaxKind == SyntaxKind.StatementDelimiterToken)
+                    break;
+
+                _ = Consume();
+            }
+
+            closeTokenIndex = Index;
+            closeToken = Current;
+            _ = Match(SyntaxKind.StatementDelimiterToken);
+        }
+        else
+        {
+            while (true)
+            {
+                if (IsEof)
+                    break;
+
+                if (Current.SyntaxKind == SyntaxKind.OpenBraceToken)
+                {
+                    ++openBraceCounter;
+                }
+                else if (Current.SyntaxKind == SyntaxKind.CloseBraceToken)
+                {
+                    if (--openBraceCounter <= 0)
+                        break;
+                }
+
+                _ = Consume();
+            }
+
+            closeTokenIndex = Index;
+            closeToken = Current;
+            _ = Match(SyntaxKind.CloseBraceToken);
+        }
+        
+        // Console.WriteLine("<<<<<<<<<<<<");
+
+        if (parserModel.Compilation.CompilationUnitKind == CompilationUnitKind.SolutionWide_DefinitionsOnly &&
+            (deferredScope.OwnerSyntaxKind == SyntaxKind.FunctionDefinitionNode ||
+             deferredScope.OwnerSyntaxKind == SyntaxKind.ArbitraryCodeBlockNode))
+        {
+            return;
+        }
+
+        parserModel.ParseChildScopeStack.Push(
+            (
+                parserModel.ScopeCurrentSubIndex,
+                new CSharpDeferredChildScope(
+                    deferredScope.SelfScopeSubIndex,
+                    openTokenIndex,
+                    openToken,
+                    closeTokenIndex,
+                    closeToken)
+            ));
     }
     
     public SyntaxToken FabricateToken(SyntaxKind syntaxKind)
