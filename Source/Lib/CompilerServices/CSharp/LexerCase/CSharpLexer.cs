@@ -617,19 +617,17 @@ public static class CSharpLexer
                 {
                     tokenWalkerBuffer.TextEditorModel?.ApplySyntaxHighlightingByTextSpan(
                         new TextEditorTextSpan(slicePositionIndex, streamReaderWrap.PositionIndex, (byte)GenericDecorationKind.StringLiteral, sliceByteIndex));
-                
                     EscapeCharacterListAdd(tokenWalkerBuffer, streamReaderWrap, ref previousEscapeCharacterTextSpan, new TextEditorTextSpan(
                         streamReaderWrap.PositionIndex,
                         streamReaderWrap.PositionIndex + 2,
                         (byte)GenericDecorationKind.EscapeCharacterPrimary,
                         streamReaderWrap.ByteIndex));
-    
                     // Presuming the escaped text is 2 characters, then read two characters.
                     _ = streamReaderWrap.ReadCharacter();
                     _ = streamReaderWrap.ReadCharacter();
-                    
                     slicePositionIndex = streamReaderWrap.PositionIndex;
                     sliceByteIndex = streamReaderWrap.ByteIndex;
+                    continue;
                 }
                 else
                 {
@@ -640,21 +638,41 @@ public static class CSharpLexer
             else if (!useVerbatim && streamReaderWrap.CurrentCharacter == '\\')
             {
                 tokenWalkerBuffer.TextEditorModel?.ApplySyntaxHighlightingByTextSpan(
-                    new TextEditorTextSpan(slicePositionIndex, streamReaderWrap.PositionIndex, (byte)GenericDecorationKind.StringLiteral, sliceByteIndex));
-            
+                    new TextEditorTextSpan(slicePositionIndex, streamReaderWrap.PositionIndex, (byte)GenericDecorationKind.StringLiteral, sliceByteIndex));            
+                var indexEscapeCharacterPosition = streamReaderWrap.PositionIndex;
+                var indexEscapeCharacterByte = streamReaderWrap.ByteIndex;
+                _ = streamReaderWrap.ReadCharacter();
+                var expectedByteLength = 1;
+                if (streamReaderWrap.CurrentCharacter == 'u')
+                {
+                    _ = streamReaderWrap.ReadCharacter();
+                    expectedByteLength = 4;
+                }
+                else if (streamReaderWrap.CurrentCharacter == 'U')
+                {
+                    _ = streamReaderWrap.ReadCharacter();
+                    expectedByteLength = 8;
+                }
+                else if (streamReaderWrap.CurrentCharacter == '"')
+                {
+                    _ = streamReaderWrap.ReadCharacter();
+                    expectedByteLength = 0;
+                }
+                
+                var actualByteLength = 0;
+                for (; actualByteLength < expectedByteLength; actualByteLength++)
+                {
+                    if (streamReaderWrap.CurrentCharacter == '"')
+                        break;
+                    _ = streamReaderWrap.ReadCharacter();
+                }
                 EscapeCharacterListAdd(tokenWalkerBuffer, streamReaderWrap, ref previousEscapeCharacterTextSpan, new TextEditorTextSpan(
-                    streamReaderWrap.PositionIndex,
-                    streamReaderWrap.PositionIndex + 2,
+                    indexEscapeCharacterPosition,
+                    streamReaderWrap.PositionIndex + actualByteLength, // remove the '-1' from ReadCharacter() of '\' for the ending exclusive index.
                     (byte)GenericDecorationKind.EscapeCharacterPrimary,
-                    streamReaderWrap.ByteIndex));
-                
-                // Presuming the escaped text is 2 characters, then read two characters.
-                _ = streamReaderWrap.ReadCharacter();
-                _ = streamReaderWrap.ReadCharacter();
-                
+                    indexEscapeCharacterByte));
                 slicePositionIndex = streamReaderWrap.PositionIndex;
                 sliceByteIndex = streamReaderWrap.ByteIndex;
-                
                 continue;
             }
             else if (useInterpolation && streamReaderWrap.CurrentCharacter == '{')
