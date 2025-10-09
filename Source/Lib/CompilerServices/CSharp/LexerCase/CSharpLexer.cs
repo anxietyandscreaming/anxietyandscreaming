@@ -684,6 +684,8 @@ public static class CSharpLexer
                 if (useRaw)
                 {
                     var interpolationTemporaryPositionIndex = streamReaderWrap.PositionIndex;
+                    // This byte index is wrong
+                    var interpolationTemporaryByte = streamReaderWrap.ByteIndex;
                     var matchBrace = 0;
                         
                     while (!streamReaderWrap.IsEof)
@@ -702,6 +704,38 @@ public static class CSharpLexer
                             }
                             else
                             {
+                                tokenWalkerBuffer.TextEditorModel?.ApplySyntaxHighlightingByTextSpan(
+                                    new TextEditorTextSpan(slicePositionIndex, streamReaderWrap.PositionIndex, (byte)GenericDecorationKind.StringLiteral, sliceByteIndex));
+                                var indexExpressionStartPosition = interpolationTemporaryPositionIndex;
+                                var indexExpressionStartByte = streamReaderWrap.ByteIndex;
+                                matchBrace = countDollarSign;
+                                _ = streamReaderWrap.ReadCharacter();
+                                
+                                while (!streamReaderWrap.IsEof)
+                                {
+                                    if (streamReaderWrap.CurrentCharacter == '{')
+                                    {
+                                        matchBrace++;
+                                    }
+                                    else if (streamReaderWrap.CurrentCharacter == '}')
+                                    {
+                                        matchBrace--;
+                                        if (matchBrace == 0)
+                                        {
+                                            _ = streamReaderWrap.ReadCharacter();
+                                            break;
+                                        }
+                                    }
+                                    
+                                    _ = streamReaderWrap.ReadCharacter();
+                                }
+                                
+                                tokenWalkerBuffer.TextEditorModel?.ApplySyntaxHighlightingByTextSpan(
+                                    new TextEditorTextSpan(indexExpressionStartPosition, streamReaderWrap.PositionIndex, (byte)GenericDecorationKind.None, indexExpressionStartByte));
+                                
+                                slicePositionIndex = streamReaderWrap.PositionIndex;
+                                sliceByteIndex = streamReaderWrap.ByteIndex;
+                            
                                 /*
                                 // 'LexInterpolatedExpression' is expected to consume one more after it is finished.
                                 // Thus, if this while loop were to consume, it would skip the
