@@ -615,13 +615,21 @@ public static class CSharpLexer
                 }
                 else if (useVerbatim && streamReaderWrap.NextCharacter == '\"')
                 {
+                    tokenWalkerBuffer.TextEditorModel?.ApplySyntaxHighlightingByTextSpan(
+                        new TextEditorTextSpan(slicePositionIndex, streamReaderWrap.PositionIndex, (byte)GenericDecorationKind.StringLiteral, sliceByteIndex));
+                
                     EscapeCharacterListAdd(tokenWalkerBuffer, streamReaderWrap, ref previousEscapeCharacterTextSpan, new TextEditorTextSpan(
                         streamReaderWrap.PositionIndex,
                         streamReaderWrap.PositionIndex + 2,
                         (byte)GenericDecorationKind.EscapeCharacterPrimary,
                         streamReaderWrap.ByteIndex));
     
+                    // Presuming the escaped text is 2 characters, then read two characters.
                     _ = streamReaderWrap.ReadCharacter();
+                    _ = streamReaderWrap.ReadCharacter();
+                    
+                    slicePositionIndex = streamReaderWrap.PositionIndex;
+                    sliceByteIndex = streamReaderWrap.ByteIndex;
                 }
                 else
                 {
@@ -676,6 +684,7 @@ public static class CSharpLexer
                             }
                             else
                             {
+                                /*
                                 // 'LexInterpolatedExpression' is expected to consume one more after it is finished.
                                 // Thus, if this while loop were to consume, it would skip the
                                 // closing double quotes if the expression were the last thing in the string.
@@ -690,6 +699,7 @@ public static class CSharpLexer
                                     countDollarSign: countDollarSign,
                                     useRaw);
                                 streamReaderWrap.BacktrackCharacterNoReturnValue();
+                                */
                             }
                         }
                     }
@@ -702,6 +712,7 @@ public static class CSharpLexer
                     }
                     else
                     {
+                        /*
                         // 'LexInterpolatedExpression' is expected to consume one more after it is finished.
                         // Thus, if this while loop were to consume, it would skip the
                         // closing double quotes if the expression were the last thing in the string.
@@ -714,6 +725,7 @@ public static class CSharpLexer
                             countDollarSign: countDollarSign,
                             useRaw);
                         continue;
+                        */
                     }
                 }
             }
