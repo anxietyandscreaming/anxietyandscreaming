@@ -462,7 +462,7 @@ public static class CSharpLexer
                         // Only the last '$' (dollar sign character) will be syntax highlighted
                         // if this code is NOT included.
                         var textSpan = new TextEditorTextSpan(entryPositionIndex, streamReaderWrap.PositionIndex, (byte)GenericDecorationKind.StringLiteral, byteEntryIndex);
-                        var token = new SyntaxToken(SyntaxKind.StringLiteralToken, textSpan);
+                        tokenWalkerBuffer.TextEditorModel?.ApplySyntaxHighlightingByTextSpan(textSpan);
                         
                         // From the LexString(...) method:
                         //     "awkwardly even if there are many of these it is expected
@@ -472,7 +472,7 @@ public static class CSharpLexer
                         if (streamReaderWrap.NextCharacter == '"')
                             return LexString(binder, tokenWalkerBuffer, streamReaderWrap, ref previousEscapeCharacterTextSpan, countDollarSign: countDollarSign, useVerbatim: false);
                         else
-                            return token;
+                            return new SyntaxToken(SyntaxKind.StringLiteralToken, textSpan);
                     }
                     else
                     {
