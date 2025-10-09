@@ -557,9 +557,173 @@ public static class CSharpLexer
     {
         var entryPositionIndex = streamReaderWrap.PositionIndex;
         var byteEntryIndex = streamReaderWrap.ByteIndex;
-        // TODO: Temporarily just do two while loops so you find the opening double quote...
-        // ...for string interpolation you enter method on '$' and it clobbers the file otherwise.
+        
+        // Escape characters / interpolated expressions.
+        // The string syntax highlighting is split at each slice,
+        // but the final token is returned using the 'entryPositionIndex'.
+        var slicePositionIndex = streamReaderWrap.PositionIndex;
+        var sliceByteIndex = streamReaderWrap.ByteIndex;
+        
+        var useInterpolation = countDollarSign > 0;
+        
+        if (useInterpolation)
+            _ = streamReaderWrap.ReadCharacter(); // Move past the '$' (dollar sign character); awkwardly even if there are many of these it is expected that the last one will not have been consumed.
+        if (useVerbatim)
+            _ = streamReaderWrap.ReadCharacter(); // Move past the '@' (at character)
+        
+        var useRaw = false;
+        int countDoubleQuotes = 0;
+        
+        if (!useVerbatim && streamReaderWrap.PeekCharacter(1) == '\"' && streamReaderWrap.PeekCharacter(2) == '\"')
+        {
+            useRaw = true;
+            
+            // Count the amount of double quotes to be used as the delimiter.
+            while (!streamReaderWrap.IsEof)
+            {
+                if (streamReaderWrap.CurrentCharacter != '\"')
+                    break;
+    
+                ++countDoubleQuotes;
+                _ = streamReaderWrap.ReadCharacter();
+            }
+        }
+        else
+        {
+            _ = streamReaderWrap.ReadCharacter(); // Move past the '"' (double quote character)
+        }
+        
         while (!streamReaderWrap.IsEof)
+        {
+            if (streamReaderWrap.CurrentCharacter == '\"')
+            {
+                if (useRaw)
+                {
+                    var matchDoubleQuotes = 0;
+                    
+                    while (!streamReaderWrap.IsEof)
+                    {
+                        if (streamReaderWrap.CurrentCharacter != '\"')
+                            break;
+                        
+                        _ = streamReaderWrap.ReadCharacter();
+                        if (++matchDoubleQuotes == countDoubleQuotes)
+                            goto foundEndDelimiter;
+                    }
+                    
+                    continue;
+                }
+                else if (useVerbatim && streamReaderWrap.NextCharacter == '\"')
+                {
+                    EscapeCharacterListAdd(tokenWalkerBuffer, streamReaderWrap, ref previousEscapeCharacterTextSpan, new TextEditorTextSpan(
+                        streamReaderWrap.PositionIndex,
+                        streamReaderWrap.PositionIndex + 2,
+                        (byte)GenericDecorationKind.EscapeCharacterPrimary,
+                        streamReaderWrap.ByteIndex));
+    
+                    _ = streamReaderWrap.ReadCharacter();
+                }
+                else
+                {
+                    _ = streamReaderWrap.ReadCharacter();
+                    break;
+                }
+            }
+            else if (!useVerbatim && streamReaderWrap.CurrentCharacter == '\\')
+            {
+                tokenWalkerBuffer.TextEditorModel?.ApplySyntaxHighlightingByTextSpan(
+                    new TextEditorTextSpan(slicePositionIndex, streamReaderWrap.PositionIndex, (byte)GenericDecorationKind.StringLiteral, sliceByteIndex));
+            
+                EscapeCharacterListAdd(tokenWalkerBuffer, streamReaderWrap, ref previousEscapeCharacterTextSpan, new TextEditorTextSpan(
+                    streamReaderWrap.PositionIndex,
+                    streamReaderWrap.PositionIndex + 2,
+                    (byte)GenericDecorationKind.EscapeCharacterPrimary,
+                    streamReaderWrap.ByteIndex));
+                
+                // Presuming the escaped text is 2 characters, then read two characters.
+                _ = streamReaderWrap.ReadCharacter();
+                _ = streamReaderWrap.ReadCharacter();
+                
+                slicePositionIndex = streamReaderWrap.PositionIndex;
+                sliceByteIndex = streamReaderWrap.ByteIndex;
+                
+                continue;
+            }
+            else if (useInterpolation && streamReaderWrap.CurrentCharacter == '{')
+            {
+                // With raw, one is escaping by way of typing less.
+                // With normal interpolation, one is escaping by way of typing more.
+                //
+                // Thus, these are two separate cases written as an if-else.
+                if (useRaw)
+                {
+                    var interpolationTemporaryPositionIndex = streamReaderWrap.PositionIndex;
+                    var matchBrace = 0;
+                        
+                    while (!streamReaderWrap.IsEof)
+                    {
+                        if (streamReaderWrap.CurrentCharacter != '{')
+                            break;
+                        
+                        _ = streamReaderWrap.ReadCharacter();
+                        if (++matchBrace >= countDollarSign)
+                        {
+                            // Found yet another '{' match beyond what was needed.
+                            // So, this logic will match from the inside to the outside.
+                            if (streamReaderWrap.CurrentCharacter == '{')
+                            {
+                                ++interpolationTemporaryPositionIndex;
+                            }
+                            else
+                            {
+                                // 'LexInterpolatedExpression' is expected to consume one more after it is finished.
+                                // Thus, if this while loop were to consume, it would skip the
+                                // closing double quotes if the expression were the last thing in the string.
+                                //
+                                // So, a backtrack is done.
+                                LexInterpolatedExpression(
+                                    binder,
+                                    tokenWalkerBuffer,
+                                    streamReaderWrap,
+                                    ref previousEscapeCharacterTextSpan,
+                                    startInclusiveOpenDelimiter: interpolationTemporaryPositionIndex,
+                                    countDollarSign: countDollarSign,
+                                    useRaw);
+                                streamReaderWrap.BacktrackCharacterNoReturnValue();
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    if (streamReaderWrap.NextCharacter == '{')
+                    {
+                        _ = streamReaderWrap.ReadCharacter();
+                    }
+                    else
+                    {
+                        // 'LexInterpolatedExpression' is expected to consume one more after it is finished.
+                        // Thus, if this while loop were to consume, it would skip the
+                        // closing double quotes if the expression were the last thing in the string.
+                        LexInterpolatedExpression(
+                            binder,
+                            tokenWalkerBuffer,
+                            streamReaderWrap,
+                            ref previousEscapeCharacterTextSpan,
+                            startInclusiveOpenDelimiter: streamReaderWrap.PositionIndex,
+                            countDollarSign: countDollarSign,
+                            useRaw);
+                        continue;
+                    }
+                }
+            }
+
+            _ = streamReaderWrap.ReadCharacter();
+        }
+        
+        foundEndDelimiter:
+        
+        /*while (!streamReaderWrap.IsEof)
         {
             if (streamReaderWrap.CurrentCharacter == '"')
             {
@@ -568,19 +732,14 @@ public static class CSharpLexer
             }
 
             streamReaderWrap.ReadCharacter();
-        }
-        while (!streamReaderWrap.IsEof)
-        {
-            if (streamReaderWrap.CurrentCharacter == '"')
-            {
-                streamReaderWrap.ReadCharacter();
-                break;
-            }
-
-            streamReaderWrap.ReadCharacter();
-        }
-        var textSpan = new TextEditorTextSpan(entryPositionIndex, streamReaderWrap.PositionIndex, (byte)GenericDecorationKind.StringLiteral, byteEntryIndex);
-        return new SyntaxToken(SyntaxKind.StringLiteralToken, textSpan);
+        }*/
+        
+        tokenWalkerBuffer.TextEditorModel?.ApplySyntaxHighlightingByTextSpan(
+            new TextEditorTextSpan(slicePositionIndex, streamReaderWrap.PositionIndex, (byte)GenericDecorationKind.StringLiteral, sliceByteIndex));
+        
+        return new SyntaxToken(
+            SyntaxKind.StringLiteralToken,
+            new TextEditorTextSpan(entryPositionIndex, streamReaderWrap.PositionIndex, (byte)GenericDecorationKind.StringLiteral, byteEntryIndex));
     }
     
     /// <summary>
