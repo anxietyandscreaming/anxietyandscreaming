@@ -39,7 +39,7 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
     
     private const string EmptyFileHackForLanguagePrimitiveText = "NotApplicable empty" + " void int char string bool var";
     
-    public const int GET_TEXT_BUFFER_SIZE = 32;
+    public const int GET_TEXT_BUFFER_SIZE = 8;
     
     public CSharpCompilerService(TextEditorService textEditorService)
     {
@@ -326,7 +326,7 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
 
                 sr.BaseStream.Seek(textSpan.ByteIndex, SeekOrigin.Begin);
                 sr.DiscardBufferedData();
-                
+
                 if (textSpan.Length <= GET_TEXT_BUFFER_SIZE)
                 {
                     sr.Read(_unsafeGetTextBuffer, 0, textSpan.Length);
@@ -335,10 +335,16 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
                 else
                 {
                     _unsafeGetTextStringBuilder.Clear();
-                    for (int i = 0; i < textSpan.Length; i++)
+                    var remainder = textSpan.Length;
+                    while (remainder > 0)
                     {
-                        sr.Read(_unsafeGetTextBuffer, 0, 1);
-                        _unsafeGetTextStringBuilder.Append(_unsafeGetTextBuffer[0]);
+                        var countTryRead = remainder >= GET_TEXT_BUFFER_SIZE ? GET_TEXT_BUFFER_SIZE : remainder;
+                        sr.Read(_unsafeGetTextBuffer, 0, countTryRead);
+                        remainder -= countTryRead; // not necessarily the actual, perhaps a check that sr.Read(...) returns the correct amount of characters is could be useful?
+                        for (int i = 0; i < countTryRead; i++)
+                        {
+                            _unsafeGetTextStringBuilder.Append(_unsafeGetTextBuffer[i]);
+                        }
                     }
                     return _unsafeGetTextStringBuilder.ToString();
                 }
@@ -382,12 +388,18 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
             else
             {
                 _safeGetTextStringBuilder.Clear();
-                for (int i = 0; i < textSpan.Length; i++)
+                var remainder = textSpan.Length;
+                while (remainder > 0)
                 {
-                    FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, 1);
-                    _safeGetTextStringBuilder.Append(_safeGetTextBufferOne[0]);
-                    return _safeGetTextStringBuilder.ToString();
+                    var countTryRead = remainder >= GET_TEXT_BUFFER_SIZE ? GET_TEXT_BUFFER_SIZE : remainder;
+                    FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, countTryRead);
+                    remainder -= countTryRead; // not necessarily the actual, perhaps a check that sr.Read(...) returns the correct amount of characters is could be useful?
+                    for (int i = 0; i < countTryRead; i++)
+                    {
+                        _safeGetTextStringBuilder.Append(_safeGetTextBufferOne[i]);
+                    }
                 }
+                return _safeGetTextStringBuilder.ToString();
             }
         }
 
@@ -442,10 +454,16 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
         else
         {
             _safeGetTextStringBuilder.Clear();
-            for (int i = 0; i < textSpan.Length; i++)
+            var remainder = textSpan.Length;
+            while (remainder > 0)
             {
-                sr.Read(_safeGetTextBufferOne, 0, 1);
-                _safeGetTextStringBuilder.Append(_safeGetTextBufferOne[0]);
+                var countTryRead = remainder >= GET_TEXT_BUFFER_SIZE ? GET_TEXT_BUFFER_SIZE : remainder;
+                sr.Read(_safeGetTextBufferOne, 0, countTryRead);
+                remainder -= countTryRead; // not necessarily the actual, perhaps a check that sr.Read(...) returns the correct amount of characters is could be useful?
+                for (int i = 0; i < countTryRead; i++)
+                {
+                    _safeGetTextStringBuilder.Append(_safeGetTextBufferOne[i]);
+                }
             }
             return _safeGetTextStringBuilder.ToString();
         }
@@ -518,11 +536,18 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
             }
             else
             {
-                for (int i = 0; i < textSpan.Length; i++)
+                var remainder = textSpan.Length;
+                while (remainder > 0)
                 {
-                    FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, 1);
-                    if (value[i] != _safeGetTextBufferOne[0])
-                        return false;
+                    var countTryRead = remainder >= GET_TEXT_BUFFER_SIZE ? GET_TEXT_BUFFER_SIZE : remainder;
+                    FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, countTryRead);
+                    var offset = textSpan.Length - remainder;
+                    for (int i = 0; i < countTryRead; i++)
+                    {
+                        if (value[offset + i] != _safeGetTextBufferOne[i])
+                            return false;
+                    }
+                    remainder -= countTryRead; // not necessarily the actual, perhaps a check that sr.Read(...) returns the correct amount of characters is could be useful?
                 }
             }
 
@@ -583,11 +608,18 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
         }
         else
         {
-            for (int i = 0; i < textSpan.Length; i++)
+            var remainder = textSpan.Length;
+            while (remainder > 0)
             {
-                sr.Read(_safeGetTextBufferOne, 0, 1);
-                if (value[i] != _safeGetTextBufferOne[0])
-                    return false;
+                var countTryRead = remainder >= GET_TEXT_BUFFER_SIZE ? GET_TEXT_BUFFER_SIZE : remainder;
+                sr.Read(_safeGetTextBufferOne, 0, countTryRead);
+                var offset = textSpan.Length - remainder;
+                for (int i = 0; i < countTryRead; i++)
+                {
+                    if (value[offset + i] != _safeGetTextBufferOne[i])
+                        return false;
+                }
+                remainder -= countTryRead; // not necessarily the actual, perhaps a check that sr.Read(...) returns the correct amount of characters is could be useful?
             }
         }
 
@@ -629,14 +661,18 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
                 }
                 else
                 {
-                    for (int i = 0; i < length; i++)
+                    var remainder = length;
+                    while (remainder > 0)
                     {
-                        FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, 1);
-                        if (_safeGetTextBufferOne[0] !=
-                            EmptyFileHackForLanguagePrimitiveText[otherTextSpan.StartInclusiveIndex + i])
+                        var countTryRead = remainder >= GET_TEXT_BUFFER_SIZE ? GET_TEXT_BUFFER_SIZE : remainder;
+                        FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, countTryRead);
+                        var offset = length - remainder;
+                        for (int i = 0; i < countTryRead; i++)
                         {
-                            return false;
+                            if (EmptyFileHackForLanguagePrimitiveText[otherTextSpan.StartInclusiveIndex + offset + i] != _safeGetTextBufferOne[i])
+                                return false;
                         }
+                        remainder -= countTryRead; // not necessarily the actual, perhaps a check that sr.Read(...) returns the correct amount of characters is could be useful?
                     }
                 }
             }
@@ -659,12 +695,18 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
                 }
                 else
                 {
-                    for (int i = 0; i < length; i++)
+                    var remainder = length;
+                    while (remainder > 0)
                     {
-                        FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, 1);
-                        otherSr.Read(_safeGetTextBufferTwo, 0, 1);
-                        if (_safeGetTextBufferOne[0] != _safeGetTextBufferTwo[0])
-                            return false;
+                        var countTryRead = remainder >= GET_TEXT_BUFFER_SIZE ? GET_TEXT_BUFFER_SIZE : remainder;
+                        FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, countTryRead);
+                        otherSr.Read(_safeGetTextBufferTwo, 0, countTryRead);
+                        for (int i = 0; i < countTryRead; i++)
+                        {
+                            if (_safeGetTextBufferOne[i] != _safeGetTextBufferTwo[i])
+                                return false;
+                        }
+                        remainder -= countTryRead; // not necessarily the actual, perhaps a check that sr.Read(...) returns the correct amount of characters is could be useful?
                     }
                 }
             }
@@ -724,11 +766,18 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
                 }
                 else
                 {
-                    for (int i = 0; i < length; i++)
+                    var remainder = length;
+                    while (remainder > 0)
                     {
-                        otherSr.Read(_safeGetTextBufferTwo, 0, 1);
-                        if (_currentFileBeingParsedTuple.Content[sourceTextSpan.StartInclusiveIndex + i] != _safeGetTextBufferTwo[0])
-                            return false;
+                        var countTryRead = remainder >= GET_TEXT_BUFFER_SIZE ? GET_TEXT_BUFFER_SIZE : remainder;
+                        otherSr.Read(_safeGetTextBufferTwo, 0, countTryRead);
+                        var offset = length - remainder;
+                        for (int i = 0; i < countTryRead; i++)
+                        {
+                            if (_currentFileBeingParsedTuple.Content[sourceTextSpan.StartInclusiveIndex + offset + i] != _safeGetTextBufferTwo[i])
+                                return false;
+                        }
+                        remainder -= countTryRead; // not necessarily the actual, perhaps a check that sr.Read(...) returns the correct amount of characters is could be useful?
                     }
                 }
             }
@@ -755,12 +804,18 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
             }
             else
             {
-                for (int i = 0; i < length; i++)
+                var remainder = length;
+                while (remainder > 0)
                 {
-                    sourceSr.Read(_safeGetTextBufferOne, 0, 1);
-                    otherSr.Read(_safeGetTextBufferTwo, 0, 1);
-                    if (_safeGetTextBufferOne[0] != _safeGetTextBufferTwo[0])
-                        return false;
+                    var countTryRead = remainder >= GET_TEXT_BUFFER_SIZE ? GET_TEXT_BUFFER_SIZE : remainder;
+                    sourceSr.Read(_safeGetTextBufferOne, 0, countTryRead);
+                    otherSr.Read(_safeGetTextBufferTwo, 0, countTryRead);
+                    for (int i = 0; i < countTryRead; i++)
+                    {
+                        if (_safeGetTextBufferOne[i] != _safeGetTextBufferTwo[i])
+                            return false;
+                    }
+                    remainder -= countTryRead; // not necessarily the actual, perhaps a check that sr.Read(...) returns the correct amount of characters is could be useful?
                 }
             }
         }
