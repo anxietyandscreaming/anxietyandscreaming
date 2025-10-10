@@ -300,7 +300,9 @@ public class TokenWalkerBuffer
                 StreamReaderWrap,
                 ref _previousEscapeCharacterTextSpan,
                 ref _interpolatedExpressionUnmatchedBraceCount);
-            TextEditorModel?.ApplySyntaxHighlightingByTextSpan(_syntaxTokenBuffer[0].TextSpan);
+            // String literals need to "slice" for syntax highlighting escaped-characters / interpolated expressions.
+            if (_syntaxTokenBuffer[0].SyntaxKind != SyntaxKind.StringLiteralToken)
+                TextEditorModel?.ApplySyntaxHighlightingByTextSpan(_syntaxTokenBuffer[0].TextSpan);
             
             
         }
@@ -389,7 +391,9 @@ public class TokenWalkerBuffer
                                 StreamReaderWrap,
                                 ref _previousEscapeCharacterTextSpan,
                                 ref _interpolatedExpressionUnmatchedBraceCount);
-                            TextEditorModel?.ApplySyntaxHighlightingByTextSpan(_syntaxTokenBuffer[0].TextSpan);
+                            // String literals need to "slice" for syntax highlighting escaped-characters / interpolated expressions.
+                            if (_syntaxTokenBuffer[0].SyntaxKind != SyntaxKind.StringLiteralToken)
+                                TextEditorModel?.ApplySyntaxHighlightingByTextSpan(_syntaxTokenBuffer[0].TextSpan);
                             return _syntaxTokenBuffer[0];
                         }
                     }
@@ -416,7 +420,9 @@ public class TokenWalkerBuffer
                 StreamReaderWrap,
                 ref _previousEscapeCharacterTextSpan,
                 ref _interpolatedExpressionUnmatchedBraceCount);
-            TextEditorModel?.ApplySyntaxHighlightingByTextSpan(_syntaxTokenBuffer[0].TextSpan);
+            // String literals need to "slice" for syntax highlighting escaped-characters / interpolated expressions.
+            if (_syntaxTokenBuffer[0].SyntaxKind != SyntaxKind.StringLiteralToken)
+                TextEditorModel?.ApplySyntaxHighlightingByTextSpan(_syntaxTokenBuffer[0].TextSpan);
         }
 
         // TODO: Peek EOF
