@@ -367,7 +367,8 @@ public static partial class Parser
     /// </summary>
     public static void ParseGetterOrSetter(VariableDeclarationNode variableDeclarationNode, ref CSharpParserState parserModel)
     {
-        parserModel.TokenWalker.Consume(); // Consume the 'get' or 'set' contextual keyword.
+        if (parserModel.TokenWalker.Current.SyntaxKind != SyntaxKind.EqualsCloseAngleBracketToken)
+            _ = parserModel.TokenWalker.Consume(); // Consume the 'get' or 'set' contextual keyword.
     
         parserModel.RegisterScope(
         	new Scope(
@@ -404,7 +405,6 @@ public static partial class Parser
     
     public static void ParsePropertyDefinition_ExpressionBound(ref CSharpParserState parserModel)
     {
-        parserModel.TokenWalker.BacktrackNoReturnValue();
         ParseGetterOrSetter(variableDeclarationNode: null, ref parserModel);
     }
 
