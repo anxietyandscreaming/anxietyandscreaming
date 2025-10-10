@@ -735,6 +735,8 @@ public static class CSharpLexer
                                 
                                 slicePositionIndex = streamReaderWrap.PositionIndex;
                                 sliceByteIndex = streamReaderWrap.ByteIndex;
+                                
+                                continue;
                             
                                 /*
                                 // 'LexInterpolatedExpression' is expected to consume one more after it is finished.
@@ -795,6 +797,8 @@ public static class CSharpLexer
                         
                         slicePositionIndex = streamReaderWrap.PositionIndex;
                         sliceByteIndex = streamReaderWrap.ByteIndex;
+                        
+                        continue;
                 
                         /*
                         // 'LexInterpolatedExpression' is expected to consume one more after it is finished.
