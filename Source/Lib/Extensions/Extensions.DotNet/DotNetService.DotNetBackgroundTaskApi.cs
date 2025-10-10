@@ -544,7 +544,6 @@ public partial class DotNetService
         var lexerOutput = DotNetSolutionLexer.Lex(new StreamReaderWrap(sr));
         
         var stringBuilder = new StringBuilder();
-        var getTextBuffer = new char[1];
         
         return new DotNetSolutionModel(
             solutionAbsolutePath,
