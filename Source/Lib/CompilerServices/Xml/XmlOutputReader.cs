@@ -43,15 +43,29 @@ public struct XmlOutputReader
                 sr.BaseStream.Seek(textSpan.ByteIndex, SeekOrigin.Begin);
                 sr.DiscardBufferedData();
                 stringBuilder.Clear();
-                for (int i = 0; i < textSpan.Length; i++)
+                
+                var remainder = textSpan.Length;
+                while (remainder > 0)
                 {
-                    sr.Read(getTextBuffer, 0, 1);
-                    stringBuilder.Append(getTextBuffer[0]);
+                    var countTryRead = remainder >= getTextBuffer.Length ? getTextBuffer.Length : remainder;
+                    sr.Read(getTextBuffer, 0, countTryRead);
+                    remainder -= countTryRead; // not necessarily the actual, perhaps a check that sr.Read(...) returns the correct amount of characters is could be useful?
+                    for (int i = 0; i < countTryRead; i++)
+                    {
+                        stringBuilder.Append(getTextBuffer[i]);
+                    }
                 }
+                
                 var tagName = stringBuilder.ToString();
-            
-                if (tagName != targetTagName)
+                
+                if (stringBuilder.Length != targetTagName.Length)
                     continue;
+                
+                for (int i = 0; i < stringBuilder.Length; i++)
+                {
+                    if (stringBuilder[i] != targetTagName[i])
+                        continue;
+                }
                 
                 string? valueAttributeOne = null;
             

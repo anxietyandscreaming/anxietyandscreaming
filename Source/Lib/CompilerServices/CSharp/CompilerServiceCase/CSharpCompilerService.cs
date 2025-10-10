@@ -39,7 +39,7 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
     
     private const string EmptyFileHackForLanguagePrimitiveText = "NotApplicable empty" + " void int char string bool var";
     
-    public const int GET_TEXT_BUFFER_SIZE = 8;
+    public const int GET_TEXT_BUFFER_SIZE = 32;
     
     public CSharpCompilerService(TextEditorService textEditorService)
     {

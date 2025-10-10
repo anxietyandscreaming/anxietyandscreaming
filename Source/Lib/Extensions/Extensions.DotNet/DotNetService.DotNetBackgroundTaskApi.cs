@@ -197,12 +197,16 @@ public partial class DotNetService
     }
 
     #region DotNetSolutionIdeApi
+    private const int GET_TEXT_BUFFER_SIZE = 32;
+    
     private async ValueTask Do_SetDotNetSolution(AbsolutePath inSolutionAbsolutePath)
     {
         var dotNetSolutionAbsolutePathString = inSolutionAbsolutePath.Value;
 
         var tokenBuilder = new StringBuilder();
         var formattedBuilder = new StringBuilder();
+        
+        var getTextBuffer = new char[GET_TEXT_BUFFER_SIZE];
 
         var textSpanList = new List<TextEditorTextSpan>();
 
@@ -219,11 +223,11 @@ public partial class DotNetService
         DotNetSolutionModel dotNetSolutionModel;
 
         if (dotNetSolutionAbsolutePathString.EndsWith(CommonFacts.DOT_NET_SOLUTION_X))
-            dotNetSolutionModel = ParseSlnx(solutionAbsolutePath, resourceUri, tokenBuilder, formattedBuilder, textSpanList);
+            dotNetSolutionModel = ParseSlnx(solutionAbsolutePath, resourceUri, tokenBuilder, formattedBuilder, textSpanList, getTextBuffer);
         else
             dotNetSolutionModel = ParseSln(solutionAbsolutePath, resourceUri);
 
-        dotNetSolutionModel.DotNetProjectList = SortProjectReferences(dotNetSolutionModel, tokenBuilder, formattedBuilder, textSpanList);
+        dotNetSolutionModel.DotNetProjectList = SortProjectReferences(dotNetSolutionModel, tokenBuilder, formattedBuilder, textSpanList, getTextBuffer);
 
         SetDotNetSolution(dotNetSolutionModel);
 
@@ -392,7 +396,8 @@ public partial class DotNetService
         ResourceUri resourceUri,
         StringBuilder tokenBuilder,
         StringBuilder formattedBuilder,
-        List<TextEditorTextSpan> textSpanList)
+        List<TextEditorTextSpan> textSpanList,
+        char[] getTextBuffer)
     {
         var dotNetProjectList = new List<IDotNetProject>();
         var solutionFolderList = new List<SolutionFolder>();
@@ -401,7 +406,6 @@ public partial class DotNetService
         var lexerOutput = XmlLexer.Lex(new StreamReaderWrap(sr), modelModifier: null, textSpanList);
         
         var stringBuilder = new StringBuilder();
-        var getTextBuffer = new char[1];
         
         var xmlOutputReader = new XmlOutputReader(lexerOutput.TextSpanList);
         
@@ -540,7 +544,6 @@ public partial class DotNetService
         var lexerOutput = DotNetSolutionLexer.Lex(new StreamReaderWrap(sr));
         
         var stringBuilder = new StringBuilder();
-        var getTextBuffer = new char[1];
         
         return new DotNetSolutionModel(
             solutionAbsolutePath,
@@ -557,7 +560,8 @@ public partial class DotNetService
         DotNetSolutionModel dotNetSolutionModel,
         StringBuilder tokenBuilder,
         StringBuilder formattedBuilder,
-        List<TextEditorTextSpan> textSpanList)
+        List<TextEditorTextSpan> textSpanList,
+        char[] getTextBuffer)
     {
         var moveUpDirectoryToken = $"..{IdeService.TextEditorService.CommonService.FileSystemProvider.DirectorySeparatorChar}";
         // "./" is being called the 'sameDirectoryToken'
@@ -571,7 +575,6 @@ public partial class DotNetService
             
         List<string> relativePathReferenceList = new();
         var stringBuilder = new StringBuilder();
-        var getTextBuffer = new char[1];
         var streamReaderWrap = new StreamReaderWrap();
 
         for (int i = dotNetSolutionModel.DotNetProjectList.Count - 1; i >= 0; i--)
