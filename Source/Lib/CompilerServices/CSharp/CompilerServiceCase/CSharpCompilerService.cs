@@ -39,6 +39,8 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
     
     private const string EmptyFileHackForLanguagePrimitiveText = "NotApplicable empty" + " void int char string bool var";
     
+    public const int GET_TEXT_BUFFER_SIZE = 32;
+    
     public CSharpCompilerService(TextEditorService textEditorService)
     {
         _textEditorService = textEditorService;
@@ -62,15 +64,15 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
     /// Safe implies the "TextEditorEditContext"
     /// </summary>
     private readonly StringBuilder _unsafeGetTextStringBuilder = new();
-    private readonly char[] _unsafeGetTextBuffer = new char[1];
+    private readonly char[] _unsafeGetTextBuffer = new char[GET_TEXT_BUFFER_SIZE];
 
     /// <summary>
     /// unsafe vs safe are duplicates of the same code
     /// Safe implies the "TextEditorEditContext"
     /// </summary>
     private readonly StringBuilder _safeGetTextStringBuilder = new();
-    private readonly char[] _safeGetTextBufferOne = new char[1];
-    private readonly char[] _safeGetTextBufferTwo = new char[1];
+    private readonly char[] _safeGetTextBufferOne = new char[GET_TEXT_BUFFER_SIZE];
+    private readonly char[] _safeGetTextBufferTwo = new char[GET_TEXT_BUFFER_SIZE];
 
     /// <summary>
     /// The currently being parsed file should reflect the TextEditorModel NOT the file system.
@@ -165,18 +167,13 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
     public char[] Rent_CharBuffer()
     {
         if (_safe_charBufferPool.TryDequeue(out var charbuffer))
-        {
-            //++_poolHit;
             return charbuffer;
-        }
 
-        //++_poolMiss;
         return new char[UTF8_MaxCharCount];
     }
     
     public void Return_CharBuffer(char[] charBuffer)
     {
-        //++_poolReturn;
         Array.Clear(charBuffer);
         _safe_charBufferPool.Enqueue(charBuffer);
     }
@@ -186,18 +183,13 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
     public byte[] Rent_ByteBuffer()
     {
         if (_safe_byteBufferPool.TryDequeue(out var bytebuffer))
-        {
-            //++_poolHit;
             return bytebuffer;
-        }
 
-        //++_poolMiss;
         return new byte[StreamReaderPooledBuffer.DefaultBufferSize];
     }
     
     public void Return_ByteBuffer(byte[] byteBuffer)
     {
-        //++_poolReturn;
         Array.Clear(byteBuffer);
         _safe_byteBufferPool.Enqueue(byteBuffer);
     }
@@ -298,7 +290,6 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
     public string? UnsafeGetText(int absolutePathId, TextEditorTextSpan textSpan)
     {
         var absolutePathString = TryGetIntToFileAbsolutePathMap(absolutePathId);
-
         if (absolutePathString is null)
             return null;
 
@@ -335,16 +326,22 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
 
                 sr.BaseStream.Seek(textSpan.ByteIndex, SeekOrigin.Begin);
                 sr.DiscardBufferedData();
-
-                _unsafeGetTextStringBuilder.Clear();
-
-                for (int i = 0; i < textSpan.Length; i++)
+                
+                if (textSpan.Length <= GET_TEXT_BUFFER_SIZE)
                 {
-                    sr.Read(_unsafeGetTextBuffer, 0, 1);
-                    _unsafeGetTextStringBuilder.Append(_unsafeGetTextBuffer[0]);
+                    sr.Read(_unsafeGetTextBuffer, 0, textSpan.Length);
+                    return new string(_unsafeGetTextBuffer, 0, textSpan.Length);
                 }
-
-                return _unsafeGetTextStringBuilder.ToString();
+                else
+                {
+                    _unsafeGetTextStringBuilder.Clear();
+                    for (int i = 0; i < textSpan.Length; i++)
+                    {
+                        sr.Read(_unsafeGetTextBuffer, 0, 1);
+                        _unsafeGetTextStringBuilder.Append(_unsafeGetTextBuffer[0]);
+                    }
+                    return _unsafeGetTextStringBuilder.ToString();
+                }
             }
         }
         
@@ -377,15 +374,21 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
             FastParseTuple.Sr.BaseStream.Seek(textSpan.ByteIndex, SeekOrigin.Begin);
             FastParseTuple.Sr.DiscardBufferedData();
 
-            _safeGetTextStringBuilder.Clear();
-
-            for (int i = 0; i < textSpan.Length; i++)
+            if (textSpan.Length <= GET_TEXT_BUFFER_SIZE)
             {
-                FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, 1);
-                _safeGetTextStringBuilder.Append(_safeGetTextBufferOne[0]);
+                FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, textSpan.Length);
+                return new string(_safeGetTextBufferOne, 0, textSpan.Length);
             }
-
-            return _safeGetTextStringBuilder.ToString();
+            else
+            {
+                _safeGetTextStringBuilder.Clear();
+                for (int i = 0; i < textSpan.Length; i++)
+                {
+                    FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, 1);
+                    _safeGetTextStringBuilder.Append(_safeGetTextBufferOne[0]);
+                    return _safeGetTextStringBuilder.ToString();
+                }
+            }
         }
 
         if (!StreamReaderTupleCache.TryGetValue(absolutePathId, out sr))
@@ -430,16 +433,22 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
         // TODO: What happens if I split a multibyte word?
         sr.BaseStream.Seek(textSpan.ByteIndex, SeekOrigin.Begin);
         sr.DiscardBufferedData();
-
-        _safeGetTextStringBuilder.Clear();
-
-        for (int i = 0; i < textSpan.Length; i++)
+        
+        if (textSpan.Length <= GET_TEXT_BUFFER_SIZE)
         {
-            sr.Read(_safeGetTextBufferOne, 0, 1);
-            _safeGetTextStringBuilder.Append(_safeGetTextBufferOne[0]);
+            sr.Read(_safeGetTextBufferOne, 0, textSpan.Length);
+            return new string(_safeGetTextBufferOne, 0, textSpan.Length);
         }
-
-        return _safeGetTextStringBuilder.ToString();
+        else
+        {
+            _safeGetTextStringBuilder.Clear();
+            for (int i = 0; i < textSpan.Length; i++)
+            {
+                sr.Read(_safeGetTextBufferOne, 0, 1);
+                _safeGetTextStringBuilder.Append(_safeGetTextBufferOne[0]);
+            }
+            return _safeGetTextStringBuilder.ToString();
+        }
     }
     
     public bool SafeCompareText(int absolutePathId, string value, TextEditorTextSpan textSpan)
@@ -498,11 +507,23 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
             FastParseTuple.Sr.BaseStream.Seek(textSpan.ByteIndex, SeekOrigin.Begin);
             FastParseTuple.Sr.DiscardBufferedData();
 
-            for (int i = 0; i < textSpan.Length; i++)
+            if (textSpan.Length <= GET_TEXT_BUFFER_SIZE)
             {
-                FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, 1);
-                if (value[i] != _safeGetTextBufferOne[0])
-                    return false;
+                FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, textSpan.Length);
+                for (int i = 0; i < textSpan.Length; i++)
+                {
+                    if (value[i] != _safeGetTextBufferOne[i])
+                        return false;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < textSpan.Length; i++)
+                {
+                    FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, 1);
+                    if (value[i] != _safeGetTextBufferOne[0])
+                        return false;
+                }
             }
 
             return true;
@@ -551,11 +572,23 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
         sr.BaseStream.Seek(textSpan.ByteIndex, SeekOrigin.Begin);
         sr.DiscardBufferedData();
 
-        for (int i = 0; i < textSpan.Length; i++)
+        if (textSpan.Length <= GET_TEXT_BUFFER_SIZE)
         {
-            sr.Read(_safeGetTextBufferOne, 0, 1);
-            if (value[i] != _safeGetTextBufferOne[0])
-                return false;
+            sr.Read(_safeGetTextBufferOne, 0, textSpan.Length);
+            for (int i = 0; i < textSpan.Length; i++)
+            {
+                if (value[i] != _safeGetTextBufferOne[i])
+                    return false;
+            }
+        }
+        else
+        {
+            for (int i = 0; i < textSpan.Length; i++)
+            {
+                sr.Read(_safeGetTextBufferOne, 0, 1);
+                if (value[i] != _safeGetTextBufferOne[0])
+                    return false;
+            }
         }
 
         return true;
@@ -582,14 +615,28 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
                 if (otherTextSpan.StartInclusiveIndex + (length - 1) >= EmptyFileHackForLanguagePrimitiveText.Length)
                     return false;
             
-                for (int i = 0; i < length; i++)
+                if (length <= GET_TEXT_BUFFER_SIZE)
                 {
-                    FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, 1);
-
-                    if (_safeGetTextBufferOne[0] !=
-                        EmptyFileHackForLanguagePrimitiveText[otherTextSpan.StartInclusiveIndex + i])
+                    FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, length);
+                    for (int i = 0; i < length; i++)
                     {
-                        return false;
+                        if (_safeGetTextBufferOne[i] !=
+                            EmptyFileHackForLanguagePrimitiveText[otherTextSpan.StartInclusiveIndex + i])
+                        {
+                            return false;
+                        }
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < length; i++)
+                    {
+                        FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, 1);
+                        if (_safeGetTextBufferOne[0] !=
+                            EmptyFileHackForLanguagePrimitiveText[otherTextSpan.StartInclusiveIndex + i])
+                        {
+                            return false;
+                        }
                     }
                 }
             }
@@ -600,12 +647,25 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
                 if (otherSr is null)
                     return false;
 
-                for (int i = 0; i < length; i++)
+                if (length <= GET_TEXT_BUFFER_SIZE)
                 {
-                    FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, 1);
-                    otherSr.Read(_safeGetTextBufferTwo, 0, 1);
-                    if (_safeGetTextBufferOne[0] != _safeGetTextBufferTwo[0])
-                        return false;
+                    FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, length);
+                    otherSr.Read(_safeGetTextBufferTwo, 0, length);
+                    for (int i = 0; i < length; i++)
+                    {
+                        if (_safeGetTextBufferOne[i] != _safeGetTextBufferTwo[i])
+                            return false;
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < length; i++)
+                    {
+                        FastParseTuple.Sr.Read(_safeGetTextBufferOne, 0, 1);
+                        otherSr.Read(_safeGetTextBufferTwo, 0, 1);
+                        if (_safeGetTextBufferOne[0] != _safeGetTextBufferTwo[0])
+                            return false;
+                    }
                 }
             }
         }
@@ -653,11 +713,23 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
                 if (otherSr is null)
                     return false;
                 
-                for (int i = 0; i < length; i++)
+                if (length <= GET_TEXT_BUFFER_SIZE)
                 {
-                    otherSr.Read(_safeGetTextBufferTwo, 0, 1);
-                    if (_currentFileBeingParsedTuple.Content[sourceTextSpan.StartInclusiveIndex + i] != _safeGetTextBufferTwo[0])
-                        return false;
+                    otherSr.Read(_safeGetTextBufferTwo, 0, length);
+                    for (int i = 0; i < length; i++)
+                    {
+                        if (_currentFileBeingParsedTuple.Content[sourceTextSpan.StartInclusiveIndex + i] != _safeGetTextBufferTwo[i])
+                            return false;
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < length; i++)
+                    {
+                        otherSr.Read(_safeGetTextBufferTwo, 0, 1);
+                        if (_currentFileBeingParsedTuple.Content[sourceTextSpan.StartInclusiveIndex + i] != _safeGetTextBufferTwo[0])
+                            return false;
+                    }
                 }
             }
         }
@@ -670,13 +742,26 @@ public sealed class CSharpCompilerService : IExtendedCompilerService
             var otherSr = GetBackupStreamReader(otherAbsolutePathId, otherTextSpan);
             if (otherSr is null)
                 return false;
-
-            for (int i = 0; i < length; i++)
+            
+            if (length <= GET_TEXT_BUFFER_SIZE)
             {
-                sourceSr.Read(_safeGetTextBufferOne, 0, 1);
-                otherSr.Read(_safeGetTextBufferTwo, 0, 1);
-                if (_safeGetTextBufferOne[0] != _safeGetTextBufferTwo[0])
-                    return false;
+                sourceSr.Read(_safeGetTextBufferOne, 0, length);
+                otherSr.Read(_safeGetTextBufferTwo, 0, length);
+                for (int i = 0; i < length; i++)
+                {
+                    if (_safeGetTextBufferOne[i] != _safeGetTextBufferTwo[i])
+                        return false;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < length; i++)
+                {
+                    sourceSr.Read(_safeGetTextBufferOne, 0, 1);
+                    otherSr.Read(_safeGetTextBufferTwo, 0, 1);
+                    if (_safeGetTextBufferOne[0] != _safeGetTextBufferTwo[0])
+                        return false;
+                }
             }
         }
 
