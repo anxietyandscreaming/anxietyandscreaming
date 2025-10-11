@@ -67,24 +67,27 @@ public class CSharpStatementBuilder
     ///
     /// Returns the result of 'ParseLambdaStatementScopeStack.TryPop(out var deferredChildScope)'.
     /// </summary>
-    public bool FinishStatement(int finishTokenIndex, ref CSharpParserState parserModel)
+    public bool FinishStatement(int restoreTokenIndex, SyntaxToken restoreToken, ref CSharpParserState parserModel)
     {
         parserModel.Return_Helper(MostRecentNode);
     
         MostRecentNode = EmptyExpressionNode.Empty;
         ChildList.Clear();
         
-        /*if (ParseLambdaStatementScopeStack.Count > 0)
+        if (ParseLambdaStatementScopeStack.Count > 0)
         {
             var tuple = ParseLambdaStatementScopeStack.Peek();
             
             if (tuple.ScopeSubIndex == parserModel.ScopeCurrentSubIndex)
             {
                 tuple = ParseLambdaStatementScopeStack.Pop();
-                tuple.DeferredChildScope.PrepareMainParserLoop(finishTokenIndex, ref parserModel);
+                tuple.DeferredChildScope.PrepareMainParserLoop(
+                    restoreTokenIndex,
+                    restoreToken,
+                    ref parserModel);
                 return true;
             }
-        }*/
+        }
         
         return false;
     }
