@@ -92,7 +92,7 @@ public static partial class Parser
         
         parserModel.SetCurrentScope_PermitCodeBlockParsing(true);
         
-        parserModel.StatementBuilder.FinishStatement(parserModel.TokenWalker.Index, ref parserModel);
+        parserModel.StatementBuilder.FinishStatement(parserModel.TokenWalker.Index, parserModel.TokenWalker.Current, ref parserModel);
         
         Parser.ParseOpenBraceToken(ref parserModel);
         

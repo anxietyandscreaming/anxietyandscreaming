@@ -78,7 +78,7 @@ public static class CSharpParser
                     break;
                 case SyntaxKind.OpenBraceToken:
                 {
-                    var deferredParsingOccurred = parserModel.StatementBuilder.FinishStatement(parserModel.TokenWalker.Index, ref parserModel);
+                    var deferredParsingOccurred = parserModel.StatementBuilder.FinishStatement(parserModel.TokenWalker.Index, parserModel.TokenWalker.Current, ref parserModel);
                     if (deferredParsingOccurred)
                         break;
 
@@ -87,7 +87,7 @@ public static class CSharpParser
                 }
                 case SyntaxKind.CloseBraceToken:
                 {
-                    var deferredParsingOccurred = parserModel.StatementBuilder.FinishStatement(parserModel.TokenWalker.Index, ref parserModel);
+                    var deferredParsingOccurred = parserModel.StatementBuilder.FinishStatement(parserModel.TokenWalker.Index, parserModel.TokenWalker.Current, ref parserModel);
                     if (deferredParsingOccurred)
                         break;
                     
@@ -141,7 +141,7 @@ public static class CSharpParser
                 }
                 case SyntaxKind.StatementDelimiterToken:
                 {
-                    var deferredParsingOccurred = parserModel.StatementBuilder.FinishStatement(parserModel.TokenWalker.Index, ref parserModel);
+                    var deferredParsingOccurred = parserModel.StatementBuilder.FinishStatement(parserModel.TokenWalker.Index, parserModel.TokenWalker.Current, ref parserModel);
                     if (deferredParsingOccurred)
                         break;
 
@@ -180,7 +180,7 @@ public static class CSharpParser
                 if (!deferredParsingOccurred)
                 {
                     // This second 'deferredParsingOccurred' is for any lambda expressions with one or many statements in its body.
-                    deferredParsingOccurred = parserModel.StatementBuilder.FinishStatement(parserModel.TokenWalker.Index, ref parserModel);
+                    deferredParsingOccurred = parserModel.StatementBuilder.FinishStatement(parserModel.TokenWalker.Index, parserModel.TokenWalker.Current, ref parserModel);
                     if (!deferredParsingOccurred)
                         break;
                 }
